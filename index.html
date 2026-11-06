@@ -86,6 +86,18 @@ textarea.field{resize:none;height:64px;line-height:1.4}
 .hist .m{display:flex;align-items:center;gap:6px}
 .hist .m i{width:9px;height:9px;border-radius:50%;background:var(--c)}
 .empty{color:var(--mute);font-size:13px;line-height:1.5}
+.sleep{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sleep label{display:grid;gap:4px;min-width:0}
+.tests{display:grid}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:baseline;padding:8px 0;font-size:13px}
+.trow+.trow{border-top:1px solid var(--faint)}
+.trow .tn{color:var(--mute)}
+.trow .tp{color:var(--mute);font-size:12px;min-width:62px;text-align:right}
+.trow.sig .tn,.trow.sig .tv{color:var(--accent)}
+.science{background:var(--faint);border-radius:14px;padding:12px 14px}
+.science h3{font-size:13px;font-weight:500;margin:0 0 6px}
+.science ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:13px;line-height:1.5;color:var(--mute)}
+.science a{color:var(--ink)}
 
 /* Report */
 .verdict{font-size:17px;line-height:1.45;margin:0;text-wrap:pretty}
@@ -144,6 +156,7 @@ textarea.field{resize:none;height:64px;line-height:1.4}
     <div class="btns">
       <button class="b primary" id="bSens">Enable sensors</button>
       <button class="b" id="bAim">Point to Moon</button>
+      <button class="b" id="bSun">Point to Sun</button>
       <button class="b" id="bCam">Camera</button>
       <button class="b" id="bNow">Now</button>
     </div>
@@ -158,7 +171,7 @@ textarea.field{resize:none;height:64px;line-height:1.4}
         <button class="b" id="bGps">Use GPS</button>
         <button class="b" id="bReset">Reset alignment</button>
       </div>
-      <p class="note">With sensors on, point the phone at the real Moon and tap "Align to Moon" to correct the compass. You can also drag sideways to rotate the sky. The Moon is drawn larger than life; its true diameter is about half a degree.</p>
+      <p class="note">With sensors on, point the phone at the real Moon or Sun and tap "Align to Moon" or "Align to Sun" to correct the compass. Never look straight at the Sun: line it up by the phone's shadow or through the camera. You can also drag sideways to rotate the sky. The Moon is drawn larger than life; its true diameter is about half a degree.</p>
     </details>
   </div>
 
@@ -169,8 +182,12 @@ textarea.field{resize:none;height:64px;line-height:1.4}
       <input class="field" type="date" id="mDate" aria-label="Day to log">
     </div>
     <div class="scale" id="scale" role="group" aria-label="Mood"></div>
-    <div class="ctx" id="mCtx">–</div>
+    <div class="sleep">
+      <label><span class="lbl">Fell asleep last night</span><input class="field" type="time" id="sBed"></label>
+      <label><span class="lbl">Hours slept</span><input class="field" type="number" id="sHrs" min="0" max="16" step="0.25" inputmode="decimal" placeholder="7.5"></label>
+    </div>
     <textarea class="field" id="mNote" placeholder="Add a note (optional)" aria-label="Note"></textarea>
+    <div class="ctx" id="mCtx">–</div>
     <div>
       <div class="row" style="margin-bottom:4px"><span class="lbl">Recent days</span><span class="lbl" id="mCount">0 entries</span></div>
       <div class="hist" id="hist"></div>
@@ -188,15 +205,26 @@ textarea.field{resize:none;height:64px;line-height:1.4}
     <div class="banner" id="rBanner" hidden><span>Sample data, not saved</span><button class="b" id="bExitDemo">Exit preview</button></div>
     <p class="verdict" id="rVerdict">–</p>
     <div class="kpis">
-      <div><span class="lbl">Entries</span><span class="val" id="kN">–</span></div>
+      <div><span class="lbl">Mood days</span><span class="val" id="kN">–</span></div>
+      <div><span class="lbl">Sleep nights</span><span class="val" id="kS">–</span></div>
       <div><span class="lbl">Lunar cycles</span><span class="val" id="kC">–</span></div>
-      <div><span class="lbl">Correlation r</span><span class="val" id="kR">–</span></div>
-      <div><span class="lbl">p-value</span><span class="val" id="kP">–</span></div>
+      <div><span class="lbl">Weekday adjusted</span><span class="val" id="kW">–</span></div>
     </div>
+    <div class="chart"><h3>Checks</h3><div class="tests" id="tests"></div></div>
     <div class="chart"><h3>Average mood by phase</h3><canvas id="cBars" height="190"></canvas></div>
+    <div class="chart" id="sleepChart"><h3>Sleep by phase, hours above or below your average</h3><canvas id="cSleep" height="190"></canvas></div>
+    <div class="chart"><h3>Average mood by weekday</h3><canvas id="cWeek" height="150"></canvas></div>
     <div class="chart"><h3>Mood against illumination</h3><canvas id="cScatter" height="200"></canvas></div>
     <div class="btns" id="rDemoRow"><button class="b" id="bDemo">Preview with sample data</button></div>
-    <p class="note">r is Pearson's correlation between mood (−2 to +2) and the Moon's illuminated fraction. The p-value comes from a permutation test with 2,000 shuffles: it estimates how often a link this strong would appear by chance. Read results after at least two lunar cycles (about 59 days).</p>
+    <div class="science">
+      <h3>What studies say</h3>
+      <ul>
+        <li>Large studies find no link between the full moon and mood, crises or psychiatric visits in the general population (<a href="https://www.scientificamerican.com/article/lunacy-and-the-full-moon/" target="_blank" rel="noopener">review</a>).</li>
+        <li>Some studies find people fall asleep later and sleep less 3–5 nights before the full moon (<a href="https://www.washington.edu/news/2021/01/27/moon-sleep/" target="_blank" rel="noopener">Casiraghi 2021</a>); others find nothing (<a href="https://sciencedaily.com/releases/2014/06/140617094029.htm" target="_blank" rel="noopener">Cordi 2014</a>).</li>
+        <li>Mood cycles tied to the Moon have been reported only in a few people with rapid-cycling bipolar disorder (<a href="https://www.nature.com/articles/mp2016263" target="_blank" rel="noopener">Wehr 2018</a>).</li>
+      </ul>
+    </div>
+    <p class="note">Each check uses a permutation test with 2,000 shuffles: p is how often a result this strong appears by chance. Because there are six checks, a result counts only when p is below 0.008. With three weeks of data or more, mood is adjusted for the day of the week first. Read results after at least two lunar cycles (about 59 days).</p>
   </div>
 </section>
 
@@ -312,19 +340,56 @@ function permP(xs, ys, r, iters) {
   }
   return (hits + 1) / (iters + 1);
 }
+function permDiff(vals, mask, iters) {
+  const n = vals.length, k = mask.filter(Boolean).length;
+  if (k < 2 || n - k < 2) return null;
+  const diff = m => { let a = 0, b = 0; for (let i = 0; i < n; i++) m[i] ? a += vals[i] : b += vals[i]; return a / k - b / (n - k); };
+  const d = diff(mask), mm = mask.slice(); let hits = 0;
+  for (let it = 0; it < iters; it++) {
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = mm[i]; mm[i] = mm[j]; mm[j] = t; }
+    if (Math.abs(diff(mm)) >= Math.abs(d) - 1e-12) hits++;
+  }
+  return { v: d, p: (hits + 1) / (iters + 1) };
+}
+// Days from Full Moon: negative before, positive after
+const dfm = e => n180(e - 180) / 360 * 29.530589;
+const preFull = e => { const d = dfm(e); return d >= -5.5 && d <= -2.5; };
+const bedMin = s => { const [h, m] = s.split(":").map(Number); return ((h * 60 + m) - 1080 + 1440) % 1440; };
+const weekday = d => new Date(d + "T12:00:00").getDay();
 function analyse(list) {
-  const n = list.length;
-  const xs = list.map(e => e.il * 100), ys = list.map(e => e.m);
-  const r = pearson(xs, ys), p = permP(xs, ys, r, 2000);
-  const sums = Array(8).fill(0), cnt = Array(8).fill(0);
-  for (const e of list) { const b = binOf(e.e); sums[b] += e.m; cnt[b]++; }
-  const means = sums.map((s, k) => cnt[k] ? s / cnt[k] : null);
+  const moods = list.filter(x => x.m != null);
+  const sleeps = list.filter(x => x.sh != null && x.ne != null);
+  const beds = list.filter(x => x.sb && x.ne != null);
+  const wsum = Array(7).fill(0), wcnt = Array(7).fill(0);
+  moods.forEach(x => { wsum[weekday(x.d)] += x.m; wcnt[weekday(x.d)]++; });
+  const grand = moods.reduce((s, x) => s + x.m, 0) / (moods.length || 1);
+  const adj = moods.length >= 21;
+  const ym = moods.map(x => adj ? x.m - wsum[weekday(x.d)] / wcnt[weekday(x.d)] + grand : x.m);
+  const corr = (xs, ys) => { if (xs.length < 5) return null; const r = pearson(xs, ys); return { v: r, p: permP(xs, ys, r, 2000) }; };
+  const tests = [
+    { id: "mIl", name: "Mood vs Moon illumination", kind: "r", n: moods.length, ...corr(moods.map(x => x.il), ym) },
+    { id: "mHalf", name: "Mood vs New and Full Moon (14.8-day cycle)", kind: "r", n: moods.length, ...corr(moods.map(x => cosd(2 * x.e)), ym) },
+    { id: "mPre", name: "Mood 3–5 days before Full Moon", kind: "mood", n: moods.length, ...permDiff(ym, moods.map(x => preFull(x.e)), 2000) },
+    { id: "sIl", name: "Sleep vs Moon illumination", kind: "r", n: sleeps.length, ...corr(sleeps.map(x => x.nil), sleeps.map(x => x.sh)) },
+    { id: "sPre", name: "Sleep 3–5 nights before Full Moon", kind: "hours", n: sleeps.length, ...permDiff(sleeps.map(x => x.sh), sleeps.map(x => preFull(x.ne)), 2000) },
+    { id: "bPre", name: "Bedtime 3–5 nights before Full Moon", kind: "min", n: beds.length, ...permDiff(beds.map(x => bedMin(x.sb)), beds.map(x => preFull(x.ne)), 2000) }
+  ];
+  const binMeans = (items, key, val) => {
+    const s = Array(8).fill(0), c = Array(8).fill(0);
+    items.forEach((x, i) => { const b = binOf(x[key]); s[b] += val(x, i); c[b]++; });
+    return { means: s.map((v, k) => c[k] ? v / c[k] : null), cnt: c };
+  };
+  const mb = binMeans(moods, "e", x => x.m);
+  const sAvg = sleeps.reduce((s, x) => s + x.sh, 0) / (sleeps.length || 1);
+  const sb = binMeans(sleeps, "ne", x => x.sh - sAvg);
+  const wk = { means: wsum.map((s, k) => wcnt[k] ? s / wcnt[k] : null), cnt: wcnt };
   const ds = list.map(e => Date.parse(e.d + "T12:00:00"));
-  const span = n ? (Math.max(...ds) - Math.min(...ds)) / 864e5 + 1 : 0;
-  let mx = 0, my = 0; xs.forEach((x, k) => { mx += x; my += ys[k]; }); mx /= n || 1; my /= n || 1;
+  const span = list.length ? (Math.max(...ds) - Math.min(...ds)) / 864e5 + 1 : 0;
+  const xs = moods.map(x => x.il * 100), ys = moods.map(x => x.m);
+  let mx = 0, my = 0; xs.forEach((x, k) => { mx += x; my += ys[k]; }); mx /= xs.length || 1; my /= xs.length || 1;
   let sxy = 0, sxx = 0; xs.forEach((x, k) => { sxy += (x - mx) * (ys[k] - my); sxx += (x - mx) ** 2; });
   const slope = sxx ? sxy / sxx : 0;
-  return { n, r, p, means, cnt, cycles: span / 29.530589, slope, icpt: my - slope * mx, avg: my };
+  return { n: moods.length, ns: sleeps.length, adj, tests, mb, sb, wk, cycles: span / 29.530589, slope, icpt: my - slope * mx, moods };
 }
 
 /* ---------- State ---------- */
@@ -393,6 +458,7 @@ async function enableSensors(fromClick) {
 function updateStatus() {
   $("sSens").innerHTML = sensorOn ? "<b>Sensors on</b>" : "Drag to look";
   $("bAim").textContent = sensorOn ? "Align to Moon" : "Point to Moon";
+  $("bSun").textContent = sensorOn ? "Align to Sun" : "Point to Sun";
   $("bSens").hidden = sensorOn;
 }
 
@@ -418,6 +484,13 @@ $("bAim").onclick = () => {
     const heading = norm(R2D * Math.atan2(fwd[0], fwd[1]));
     userOff = norm(userOff + n180(heading - st.az)); store.set("mm-off", userOff); toast("Compass aligned");
   } else { yaw = st.az; pitch = clamp(st.alt, -89, 89); }
+};
+$("bSun").onclick = () => {
+  if (!st) return;
+  if (sensorOn) {
+    const heading = norm(R2D * Math.atan2(fwd[0], fwd[1]));
+    userOff = norm(userOff + n180(heading - st.sunAz)); store.set("mm-off", userOff); toast("Compass aligned to the Sun");
+  } else { yaw = st.sunAz; pitch = clamp(st.sunAlt, -89, 89); }
 };
 $("bReset").onclick = () => { userOff = 0; store.set("mm-off", 0); toast("Alignment reset"); };
 $("bNow").onclick = () => { offsetMin = 0; $("tslider").value = 0; tick(); };
@@ -528,7 +601,7 @@ function tick() {
   drawMoon(mctx, 56, 56, 40, st, -Math.PI / 2, 1, false);
 }
 
-/* ---------- Mood log ---------- */
+/* ---------- Mood and sleep log ---------- */
 const MOODS = [
   { v: -2, l: "Awful" }, { v: -1, l: "Bad" }, { v: 0, l: "Okay" }, { v: 1, l: "Good" }, { v: 2, l: "Great" }
 ];
@@ -537,12 +610,27 @@ const moodLbl = v => MOODS[v + 2].l;
 let entries = store.get("mm-entries", {});
 let demo = null;
 const todayStr = () => new Date().toLocaleDateString("sv-SE");
-function moonOn(d) {
-  const [y, m, dd] = d.split("-").map(Number);
-  const s = astro(new Date(y, m - 1, dd, 12), lat, lon);
-  return { e: +s.elong.toFixed(2), il: +s.illum.toFixed(4) };
+const moonCache = new Map();
+function moonAt(d, hour) {
+  const k = d + "@" + hour;
+  if (!moonCache.has(k)) {
+    const [y, m, dd] = d.split("-").map(Number);
+    const s = astro(new Date(y, m - 1, dd, hour), lat, lon);
+    moonCache.set(k, { e: +s.elong.toFixed(2), il: +s.illum.toFixed(4) });
+  }
+  return moonCache.get(k);
 }
+const moonOn = d => moonAt(d, 12);            // the day
+const nightOf = d => moonAt(d, 0);            // the night that ended that morning
 const saveEntries = () => store.set("mm-entries", entries);
+const curDay = () => $("mDate").value || todayStr();
+function upsert(d, patch) {
+  const e = { ...(entries[d] || {}), ...patch };
+  for (const k of Object.keys(e)) if (e[k] === undefined || e[k] === "") delete e[k];
+  if (e.m == null && e.sh == null && !e.sb && !e.n) delete entries[d];
+  else entries[d] = { ...e, ...moonOn(d) };
+  saveEntries();
+}
 const sc = $("scale");
 MOODS.forEach(m => {
   const b = document.createElement("button");
@@ -550,9 +638,9 @@ MOODS.forEach(m => {
   b.style.setProperty("--c", `var(--mood${m.v + 2})`);
   b.innerHTML = `<i></i>${m.l}`;
   b.onclick = () => {
-    const d = $("mDate").value || todayStr();
-    entries[d] = { ...(entries[d] || {}), m: m.v, ...moonOn(d), n: $("mNote").value.trim() };
-    saveEntries(); renderMood(); toast("Saved " + m.l.toLowerCase() + " for " + (d === todayStr() ? "today" : d));
+    const d = curDay();
+    upsert(d, { m: m.v, n: $("mNote").value.trim() });
+    renderMood(); toast("Saved " + m.l.toLowerCase() + " for " + (d === todayStr() ? "today" : d));
   };
   sc.appendChild(b);
 });
@@ -562,18 +650,23 @@ $("mDate").onchange = renderMood;
 let noteT = 0;
 $("mNote").oninput = () => {
   clearTimeout(noteT);
-  noteT = setTimeout(() => {
-    const d = $("mDate").value; if (!entries[d]) return;
-    entries[d].n = $("mNote").value.trim(); saveEntries();
-  }, 500);
+  noteT = setTimeout(() => { if (entries[curDay()]) upsert(curDay(), { n: $("mNote").value.trim() }); }, 500);
+};
+$("sBed").onchange = () => { upsert(curDay(), { sb: $("sBed").value || undefined }); renderMood(); };
+$("sHrs").onchange = () => {
+  const v = parseFloat($("sHrs").value.replace(",", "."));
+  upsert(curDay(), { sh: isFinite(v) && v >= 0 && v <= 16 ? v : undefined }); renderMood();
 };
 function renderMood() {
-  const d = $("mDate").value || todayStr(), e = entries[d], mo = moonOn(d);
-  [...sc.children].forEach(b => b.setAttribute("aria-pressed", String(!!e && +b.dataset.v === e.m)));
+  const d = curDay(), e = entries[d];
+  [...sc.children].forEach(b => b.setAttribute("aria-pressed", String(e?.m != null && +b.dataset.v === e.m)));
   $("mNote").value = e?.n || "";
-  $("mCtx").textContent = "Moon that day: " + BINS[binOf(mo.e)] + ", " + Math.round(mo.il * 100) + "% lit";
+  $("sBed").value = e?.sb || "";
+  $("sHrs").value = e?.sh ?? "";
+  if (e?.m != null) { const mo = moonOn(d); $("mCtx").textContent = "Moon that day: " + BINS[binOf(mo.e)] + ", " + Math.round(mo.il * 100) + "% lit"; }
+  else $("mCtx").textContent = "The Moon's phase shows after you pick a mood, so it can't sway your answer.";
   const keys = Object.keys(entries).sort().reverse();
-  $("mCount").textContent = keys.length + (keys.length === 1 ? " entry" : " entries");
+  $("mCount").textContent = keys.length + (keys.length === 1 ? " day" : " days");
   const hist = $("hist");
   if (!keys.length) { hist.innerHTML = `<p class="empty">No entries yet. Tap a mood above to log today.</p>`; return; }
   hist.innerHTML = "";
@@ -582,9 +675,13 @@ function renderMood() {
     const dt = new Date(k + "T12:00:00");
     row.innerHTML = `<span class="d"></span><span class="p"></span><span class="m"><i></i><span></span></span>`;
     row.children[0].textContent = dt.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-    row.children[1].textContent = BINS[binOf(x.e)] + (x.n ? " · " + x.n : "");
-    row.querySelector("i").style.background = moodCol(x.m);
-    row.querySelector(".m span").textContent = moodLbl(x.m);
+    const bits = [];
+    if (x.sh != null) bits.push(x.sh + " h sleep");
+    if (x.m != null) bits.push(BINS[binOf(x.e)]);
+    if (x.n) bits.push(x.n);
+    row.children[1].textContent = bits.join(" · ");
+    if (x.m != null) { row.querySelector("i").style.background = moodCol(x.m); row.querySelector(".m span").textContent = moodLbl(x.m); }
+    else { row.querySelector("i").remove(); row.querySelector(".m span").textContent = "–"; }
     row.style.cursor = "pointer";
     row.onclick = () => { $("mDate").value = k; renderMood(); };
     hist.appendChild(row);
@@ -596,8 +693,11 @@ const csvEsc = s => /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 $("bExport").onclick = () => {
   const keys = Object.keys(entries).sort();
   if (!keys.length) { toast("Nothing to export yet"); return; }
-  const lines = ["date,mood,mood_label,phase,illumination_pct,elongation_deg,note"];
-  for (const k of keys) { const e = entries[k]; lines.push([k, e.m, moodLbl(e.m), BINS[binOf(e.e)], (e.il * 100).toFixed(1), e.e.toFixed(1), csvEsc(e.n || "")].join(",")); }
+  const lines = ["date,mood,mood_label,fell_asleep,hours_slept,phase,illumination_pct,elongation_deg,note"];
+  for (const k of keys) {
+    const e = entries[k];
+    lines.push([k, e.m ?? "", e.m != null ? moodLbl(e.m) : "", e.sb || "", e.sh ?? "", BINS[binOf(e.e)], (e.il * 100).toFixed(1), e.e.toFixed(1), csvEsc(e.n || "")].join(","));
+  }
   const url = URL.createObjectURL(new Blob([lines.join("\n") + "\n"], { type: "text/csv" }));
   const a = document.createElement("a"); a.href = url; a.download = "moon-mood-" + todayStr() + ".csv";
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
@@ -619,14 +719,20 @@ $("bImport").onclick = () => $("fImport").click();
 $("fImport").onchange = async e => {
   const file = e.target.files[0]; if (!file) return;
   const rows = parseCSV(await file.text()); let added = 0;
-  const h = rows[0].map(s => s.trim().toLowerCase());
-  const iD = h.indexOf("date"), iM = h.indexOf("mood"), iN = h.indexOf("note");
+  const h = rows[0].map(s => s.trim().toLowerCase()), col = n => h.indexOf(n);
   for (const r of rows.slice(1)) {
-    const d = (r[iD] || "").trim(), m = parseInt(r[iM], 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !(m >= -2 && m <= 2)) continue;
-    entries[d] = { m, ...moonOn(d), n: iN >= 0 ? (r[iN] || "").trim() : "" }; added++;
+    const d = (r[col("date")] || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    const m = parseInt(r[col("mood")], 10), sh = parseFloat(r[col("hours_slept")]), sb = (r[col("fell_asleep")] || "").trim();
+    upsert(d, {
+      m: m >= -2 && m <= 2 ? m : undefined,
+      sh: isFinite(sh) ? sh : undefined,
+      sb: /^\d{1,2}:\d{2}$/.test(sb) ? sb.padStart(5, "0") : undefined,
+      n: col("note") >= 0 ? (r[col("note")] || "").trim() : undefined
+    });
+    added++;
   }
-  saveEntries(); renderMood(); toast("Imported " + added + " days"); e.target.value = "";
+  renderMood(); toast("Imported " + added + " days"); e.target.value = "";
 };
 
 /* ---------- Report ---------- */
@@ -635,9 +741,14 @@ function sampleData() {
   let walk = 0;
   for (let k = 0; k < 120; k++) {
     if (Math.random() < 0.18) continue;
-    const d = new Date(start + k * 864e5).toLocaleDateString("sv-SE"), mo = moonOn(d);
+    const d = new Date(start + k * 864e5).toLocaleDateString("sv-SE");
     walk = clamp(walk * 0.6 + (Math.random() - 0.5) * 1.6, -2, 2);
-    out[d] = { m: Math.round(clamp(walk + (Math.random() - 0.5), -2, 2)), ...mo, n: "" };
+    const bed = 23 * 60 + 20 + Math.round((Math.random() - 0.5) * 100);
+    out[d] = {
+      m: Math.round(clamp(walk + (Math.random() - 0.5), -2, 2)), ...moonOn(d), n: "",
+      sh: Math.round((7.1 + (Math.random() - 0.5) * 1.8) * 4) / 4,
+      sb: String(Math.floor(bed / 60) % 24).padStart(2, "0") + ":" + String(bed % 60).padStart(2, "0")
+    };
   }
   return out;
 }
@@ -650,49 +761,81 @@ function prepCanvas(c, h) {
   const x = c.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
   return [x, w, h];
 }
-const sgn = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2);
+const sgn = (v, d = 2) => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d);
+const ALPHA = 0.05 / 6;
+function fmtTest(t) {
+  if (t.v == null) return "needs more data";
+  if (t.kind === "r") return "r = " + sgn(t.v);
+  if (t.kind === "mood") return sgn(t.v) + " mood points";
+  if (t.kind === "hours") return sgn(t.v * 60, 0) + " min of sleep";
+  return sgn(t.v, 0) + " min later";
+}
+function plain(t) {
+  if (t.id === "mIl") return `your mood ${t.v > 0 ? "rises" : "drops"} as the Moon gets fuller`;
+  if (t.id === "mHalf") return `your mood is ${t.v > 0 ? "higher" : "lower"} around New and Full Moon`;
+  if (t.id === "mPre") return `your mood is ${t.v > 0 ? "higher" : "lower"} 3–5 days before Full Moon`;
+  if (t.id === "sIl") return `you sleep ${t.v > 0 ? "more" : "less"} as the Moon gets fuller`;
+  if (t.id === "sPre") return `you sleep ${Math.abs(Math.round(t.v * 60))} minutes ${t.v > 0 ? "more" : "less"} 3–5 nights before Full Moon`;
+  return `you fall asleep ${Math.abs(Math.round(t.v))} minutes ${t.v > 0 ? "later" : "earlier"} 3–5 nights before Full Moon`;
+}
 function renderReport() {
-  const src = demo || entries, list = Object.entries(src).map(([d, e]) => ({ d, ...e }));
+  const src = demo || entries;
+  const list = Object.entries(src).map(([d, e]) => { const nm = nightOf(d); return { d, ...e, ne: nm.e, nil: nm.il }; });
   $("rBanner").hidden = !demo;
   $("rDemoRow").hidden = !!demo || list.length >= 10;
   const A = analyse(list);
   $("kN").textContent = A.n;
-  $("kC").textContent = A.n ? A.cycles.toFixed(1) : "–";
-  $("kR").textContent = A.n >= 3 ? sgn(A.r) : "–";
-  $("kP").textContent = A.n >= 3 ? (A.p < 0.001 ? "<0.001" : A.p.toFixed(3)) : "–";
+  $("kS").textContent = A.ns;
+  $("kC").textContent = list.length ? A.cycles.toFixed(1) : "–";
+  $("kW").textContent = A.adj ? "Yes" : "Not yet";
+
+  const tb = $("tests"); tb.innerHTML = "";
+  for (const t of A.tests) {
+    const row = document.createElement("div"), sig = t.p != null && t.p < ALPHA;
+    row.className = "trow" + (sig ? " sig" : "");
+    row.innerHTML = `<span class="tn"></span><span class="tv"></span><span class="tp"></span>`;
+    row.children[0].textContent = t.name;
+    row.children[1].textContent = fmtTest(t);
+    row.children[2].textContent = t.p == null ? "" : "p " + (t.p < 0.001 ? "<0.001" : t.p.toFixed(3));
+    tb.appendChild(row);
+  }
 
   let v;
-  if (A.n < 10) v = `Log at least a couple of weeks before reading anything into this. You have ${A.n} ${A.n === 1 ? "entry" : "entries"} so far.`;
+  if (A.n < 10) v = `Log at least a couple of weeks before reading anything into this. You have ${A.n} mood ${A.n === 1 ? "day" : "days"} so far.`;
   else {
     const early = A.cycles < 2 ? `Early read, ${A.cycles.toFixed(1)} lunar cycles in. ` : "";
-    if (A.p < 0.05) {
-      const s = Math.abs(A.r) < 0.3 ? "weak" : Math.abs(A.r) < 0.5 ? "moderate" : "strong";
-      v = early + `Your mood tends to ${A.r > 0 ? "rise" : "drop"} as the Moon gets fuller. The link is ${s} and could still be chance, so keep logging.`;
-    } else v = early + `No clear link between your mood and the Moon's phase so far. Day-to-day changes look unrelated to how full the Moon is.`;
-    let best = -1;
-    A.means.forEach((m, k) => { if (A.cnt[k] >= 3 && (best < 0 || m > A.means[best])) best = k; });
-    if (best >= 0) v += ` Best phase: ${BINS[best]} (average ${sgn(A.means[best])}, ${A.cnt[best]} days).`;
+    const hits = A.tests.filter(t => t.p != null && t.p < ALPHA);
+    if (hits.length) v = early + "One pattern stands out: " + hits.map(plain).join("; ") + ". It could still be chance, so keep logging.";
+    else v = early + "No clear link between the Moon and your mood or sleep so far. None of the six checks is stronger than chance.";
   }
   $("rVerdict").textContent = v;
-  drawBars(A); drawScatter(list, A);
+  drawBars($("cBars"), A.mb, { lim: 2, labels: null, col: m => moodCol(clamp(Math.round(m), -2, 2)), tick: ["+2", "0", "−2"] });
+  $("sleepChart").hidden = A.ns < 3;
+  if (A.ns >= 3) drawBars($("cSleep"), A.sb, { lim: 1.5, labels: null, col: () => css("--accent"), tick: ["+1.5h", "0", "−1.5h"] });
+  const wkOrder = [1, 2, 3, 4, 5, 6, 0];
+  drawBars($("cWeek"), { means: wkOrder.map(k => A.wk.means[k]), cnt: wkOrder.map(k => A.wk.cnt[k]) },
+    { lim: 2, labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], col: m => moodCol(clamp(Math.round(m), -2, 2)), tick: ["+2", "0", "−2"] });
+  drawScatter(A.moods, A);
 }
-function drawBars(A) {
-  const [x, w, h] = prepCanvas($("cBars"), 190);
-  const left = 26, right = 6, top = 8, ch = 112, y0 = top + ch / 2, bw = (w - left - right) / 8;
+// Diverging bars around zero; moon icons under the 8 phases, or text labels
+function drawBars(c, B, o) {
+  const H = o.labels ? 150 : 190;
+  const [x, w] = prepCanvas(c, H);
+  const nb = B.means.length, left = 38, right = 6, top = 8, ch = o.labels ? 92 : 112, y0 = top + ch / 2, bw = (w - left - right) / nb;
   x.font = "11px " + css("--f"); x.fillStyle = css("--mute"); x.textAlign = "right"; x.textBaseline = "middle";
-  x.fillText("+2", left - 6, top + 4); x.fillText("0", left - 6, y0); x.fillText("−2", left - 6, top + ch - 4);
+  x.fillText(o.tick[0], left - 6, top + 4); x.fillText(o.tick[1], left - 6, y0); x.fillText(o.tick[2], left - 6, top + ch - 4);
   x.fillStyle = "rgba(236,238,243,.12)"; x.fillRect(left, y0, w - left - right, 1);
   x.textAlign = "center"; x.textBaseline = "alphabetic";
-  for (let k = 0; k < 8; k++) {
-    const cx = left + bw * (k + 0.5), m = A.means[k];
+  for (let k = 0; k < nb; k++) {
+    const cx = left + bw * (k + 0.5), m = B.means[k];
     if (m != null) {
-      const yv = y0 - m / 2 * (ch / 2), bwid = Math.min(26, bw * 0.55);
-      x.fillStyle = moodCol(clamp(Math.round(m), -2, 2));
+      const yv = y0 - clamp(m, -o.lim, o.lim) / o.lim * (ch / 2), bwid = Math.min(26, bw * 0.55);
+      x.fillStyle = o.col(m);
       const y1 = Math.min(y0, yv), hh = Math.max(2, Math.abs(yv - y0));
       x.beginPath(); x.roundRect ? x.roundRect(cx - bwid / 2, y1, bwid, hh, 3) : x.rect(cx - bwid / 2, y1, bwid, hh); x.fill();
     }
-    drawMoon(x, cx, top + ch + 22, 9, iconState(k * 45), -Math.PI / 2, 1, false);
-    x.fillStyle = css("--mute"); x.fillText(A.cnt[k] ? A.cnt[k] + "d" : "–", cx, top + ch + 52);
+    if (o.labels) { x.fillStyle = css("--ink"); x.fillText(o.labels[k], cx, top + ch + 20); x.fillStyle = css("--mute"); x.fillText(B.cnt[k] ? B.cnt[k] + "d" : "–", cx, top + ch + 38); }
+    else { drawMoon(x, cx, top + ch + 22, 9, iconState(k * 45), -Math.PI / 2, 1, false); x.fillStyle = css("--mute"); x.fillText(B.cnt[k] ? B.cnt[k] + "d" : "–", cx, top + ch + 52); }
   }
 }
 function drawScatter(list, A) {
@@ -848,7 +991,7 @@ setInterval(tick, 1000);
 enableSensors(false);
 gps();
 requestAnimationFrame(frame);
-window.__mm = { pearson, permP, analyse, binOf, moonOn };
+window.__mm = { pearson, permP, permDiff, analyse, binOf, moonOn };
 })();
 </script>
 
