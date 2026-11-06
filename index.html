@@ -400,7 +400,7 @@ const store = {
 };
 const cv = $("sky"), ctx = cv.getContext("2d");
 const mctx = $("mini").getContext("2d");
-const sheet = $("sheet"), video = $("cam");
+const sheet = $("sheet"), video = $("cam"), topBar = document.querySelector(".top");
 
 const loc = store.get("mm-loc", null);
 let lat = loc?.lat ?? 49.195, lon = loc?.lon ?? 16.608, decl = loc?.decl ?? 5.3, locName = loc?.name ?? "Brno (default)";
@@ -955,7 +955,7 @@ function frame() {
       }
     }
     // Sun and Moon: drawn where they are, or pinned to the screen edge in their direction
-    const topEdge = 78, botEdge = H - ph - 12, side = 26;
+    const topEdge = topBar.getBoundingClientRect().bottom - 4, botEdge = H - ph - 12, side = 26;
     const place = (v, r) => {
       const p = proj(v), x0 = side + r, x1 = W - side - r, y0 = topEdge + r, y1 = Math.max(y0 + 1, botEdge - r);
       if (p && p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1) return { x: p[0], y: p[1], on: true };
