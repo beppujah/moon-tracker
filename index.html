@@ -1,121 +1,194 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#060a14"><style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}</style></head><body>
-<title>Moon Tracker</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Moon Mood"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#05070d"><style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}</style></head><body>
+<title>Moon Mood</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Spectral:ital,wght@0,400;1,300;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&display=swap">
 <style>
-/* Layout: cielo a schermo intero (canvas), chip di stato in alto, pannello dati in basso comprimibile */
+/* Layout: full-screen sky canvas; quiet text overlay on top; bottom sheet with three tabs (Sky, Mood, Report) */
 :root{
-  --sky:#060a14;
-  --ink:#e7e9f0;
-  --muted:#8b93a7;
-  --moon:#dedcd3;
-  --amber:#e9b872;
-  --panel:rgba(9,13,24,.86);
-  --line:rgba(205,214,240,.14);
-  --field:rgba(255,255,255,.06);
-  --f-display:"Spectral",Georgia,"Times New Roman",serif;
-  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --bg:#05070d;
+  --sheet:rgba(11,13,21,.92);
+  --ink:#eceef3;
+  --mute:#878d9d;
+  --faint:rgba(236,238,243,.07);
+  --accent:#e8c68e;
+  --mood0:#d0705e;
+  --mood1:#d39a7d;
+  --mood2:#8a90a0;
+  --mood3:#9cc4ae;
+  --mood4:#63c393;
+  --f:"Geist",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color-scheme:dark;
 }
 html,body{height:100%}
-body{background:var(--sky);color:var(--ink);font-family:var(--f-mono);font-size:13px;overflow:hidden;-webkit-tap-highlight-color:transparent}
-#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:var(--sky)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f);font-size:14px;overflow:hidden;-webkit-tap-highlight-color:transparent;font-feature-settings:"tnum"}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:var(--bg)}
 #sky{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
-.top{position:fixed;top:0;left:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
-.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:11px;color:var(--muted);letter-spacing:.02em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.chip b{color:var(--ink);font-weight:500}
-.chip.on b{color:var(--amber)}
-.panel{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding-top:4px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:64%;overflow-y:auto}
-.inner{max-width:560px;margin:0 auto;display:grid;gap:14px}
-.handle{display:flex;justify-content:center;padding:6px 0 2px;background:none;border:0;width:100%;cursor:pointer}
-.handle span{width:38px;height:4px;border-radius:2px;background:var(--line)}
+.top{position:fixed;top:0;left:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;justify-content:space-between;gap:12px;pointer-events:none;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.brand{font-weight:600;letter-spacing:.01em}
+.status{color:var(--mute);font-size:12px;text-align:right}
+.status b{color:var(--ink);font-weight:500}
+
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--sheet);border-radius:18px 18px 0 0;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding-top:6px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:66%;overflow-y:auto;overscroll-behavior:contain}
+.sheet.tall{max-height:78%}
+.inner{max-width:560px;margin:0 auto;display:grid;gap:18px}
+.tabs{display:flex;gap:4px;justify-content:center;position:sticky;top:-6px;background:var(--sheet);padding:6px 0 4px;z-index:2}
+.tabs button{font:inherit;font-size:13px;font-weight:500;color:var(--mute);background:none;border:0;padding:8px 14px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);background:var(--faint)}
+
 .head{display:flex;align-items:center;gap:14px}
-#mini{width:64px;height:64px;flex:none}
-.phase{min-width:0}
-.phase h1{font-family:var(--f-display);font-style:italic;font-weight:300;font-size:28px;line-height:1.05;margin:0;text-wrap:balance}
-.phase p{margin:4px 0 0;color:var(--muted);font-size:12px}
-.phase p b{color:var(--ink);font-weight:500}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;font-variant-numeric:tabular-nums}
-.grid div{display:grid;gap:2px;min-width:0}
-.lbl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.mini{width:56px;height:56px;flex:none}
+.head h2{font-size:20px;font-weight:500;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.head p{margin:3px 0 0;color:var(--mute);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 12px}
+.grid div{display:grid;gap:3px;min-width:0}
+.lbl{font-size:11px;color:var(--mute);letter-spacing:.02em}
 .val{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.val small{color:var(--muted);font-size:11px}
-.time{display:grid;gap:6px}
-.time .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-#tval{font-size:12px;font-variant-numeric:tabular-nums}
-input[type=range]{width:100%;accent-color:var(--amber);height:28px}
+.val small{color:var(--mute);font-size:12px}
+.time{display:grid;gap:4px}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px;margin:0}
 .btns{display:flex;flex-wrap:wrap;gap:8px}
-button.b{font:inherit;font-size:12px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer}
-button.b.primary{background:var(--amber);color:#1a1408;border-color:transparent;font-weight:500}
-button.b:focus-visible,.handle:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-details{border-top:1px solid var(--line);padding-top:10px}
-summary{cursor:pointer;color:var(--muted);font-size:12px}
+.b{font:inherit;font-size:13px;color:var(--ink);background:var(--faint);border:0;border-radius:999px;padding:9px 14px;cursor:pointer}
+.b.primary{background:var(--accent);color:#19140a;font-weight:500}
+.b:disabled{opacity:.4}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details summary{cursor:pointer;color:var(--mute);font-size:13px;list-style:none}
+details summary::before{content:"+ ";}
+details[open] summary::before{content:"− ";}
 .set{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .set label{display:grid;gap:4px;min-width:0}
-.set input{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;box-sizing:border-box;min-width:0}
-.note{color:var(--muted);font-size:11px;line-height:1.5;margin:8px 0 0;max-width:62ch}
-.panel.min .more{display:none}
-@media (max-width:360px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.set{grid-template-columns:1fr 1fr}}
+.field{font:inherit;color:var(--ink);background:var(--faint);border:0;border-radius:10px;padding:9px 10px;width:100%;box-sizing:border-box;min-width:0}
+.note{color:var(--mute);font-size:12px;line-height:1.55;margin:10px 0 0;max-width:62ch}
+
+/* Mood */
+.mhead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.mhead h2{font-size:20px;font-weight:500;margin:0}
+.mhead input{width:auto;padding:7px 10px}
+.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.scale button{font:inherit;font-size:12px;color:var(--mute);background:none;border:0;padding:8px 0;display:grid;justify-items:center;gap:7px;cursor:pointer;border-radius:12px}
+.scale button i{width:30px;height:30px;border-radius:50%;background:var(--c);opacity:.35;transition:opacity .15s,transform .15s}
+.scale button[aria-pressed="true"]{color:var(--ink)}
+.scale button[aria-pressed="true"] i{opacity:1;transform:scale(1.12)}
+.ctx{color:var(--mute);font-size:13px}
+textarea.field{resize:none;height:64px;line-height:1.4}
+.hist{display:grid;gap:0}
+.hist div{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:8px 0;font-size:13px}
+.hist div+div{border-top:1px solid var(--faint)}
+.hist .d{color:var(--mute)}
+.hist .p{color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hist .m{display:flex;align-items:center;gap:6px}
+.hist .m i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.empty{color:var(--mute);font-size:13px;line-height:1.5}
+
+/* Report */
+.verdict{font-size:17px;line-height:1.45;margin:0;text-wrap:pretty}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpis div{display:grid;gap:3px;min-width:0}
+.kpis .val{font-size:17px}
+.chart h3{font-size:13px;font-weight:500;margin:0 0 8px;color:var(--mute)}
+.chart canvas{width:100%;display:block}
+.banner{background:var(--faint);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--mute);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 44px);background:var(--sheet);padding:8px 14px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.sheet.min [data-panel]{display:none}
+@media (max-width:360px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.set{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <video id="cam" playsinline muted hidden></video>
-<canvas id="sky" aria-label="Vista del cielo con la posizione della luna"></canvas>
+<canvas id="sky" aria-label="Sky view showing the Moon's position"></canvas>
 
 <div class="top">
-  <div class="chip" id="cSens">Vista: <b>trascina</b></div>
-  <div class="chip" id="cLoc">Posizione: <b>Brno</b></div>
-  <div class="chip" id="cAim">Luna: <b>–</b></div>
+  <div class="brand">Moon Mood</div>
+  <div class="status"><span id="sAim">–</span><br><span id="sSens">Drag to look</span></div>
 </div>
+<div class="toast" id="toast" role="status"></div>
 
-<section class="panel" id="panel">
-  <button class="handle" id="handle" aria-label="Comprimi o espandi il pannello"><span></span></button>
-  <div class="inner">
+<section class="sheet" id="sheet">
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="sky" id="tSky">Sky</button>
+    <button role="tab" aria-selected="false" data-tab="mood" id="tMood">Mood</button>
+    <button role="tab" aria-selected="false" data-tab="report" id="tReport">Report</button>
+  </div>
+
+  <!-- SKY -->
+  <div class="inner" data-panel="sky">
     <div class="head">
-      <canvas id="mini" width="128" height="128"></canvas>
-      <div class="phase">
-        <h1 id="pName">–</h1>
-        <p><b id="pIll">–</b> illuminata · età <b id="pAge">–</b></p>
+      <canvas class="mini" id="mini" width="112" height="112"></canvas>
+      <div>
+        <h2 id="pName">–</h2>
+        <p><span id="pIll">–</span> lit · day <span id="pAge">–</span> of 29.5</p>
       </div>
     </div>
-
-    <div class="more">
-      <div class="grid">
-        <div><span class="lbl">Azimut</span><span class="val" id="vAz">–</span></div>
-        <div><span class="lbl">Altezza</span><span class="val" id="vAlt">–</span></div>
-        <div><span class="lbl">Distanza</span><span class="val" id="vDist">–</span></div>
-        <div><span class="lbl">Sorge</span><span class="val" id="vRise">–</span></div>
-        <div><span class="lbl">Tramonta</span><span class="val" id="vSet">–</span></div>
-        <div><span class="lbl">Sole</span><span class="val" id="vSun">–</span></div>
-      </div>
+    <div class="grid">
+      <div><span class="lbl">Azimuth</span><span class="val" id="vAz">–</span></div>
+      <div><span class="lbl">Altitude</span><span class="val" id="vAlt">–</span></div>
+      <div><span class="lbl">Distance</span><span class="val" id="vDist">–</span></div>
+      <div><span class="lbl">Moonrise</span><span class="val" id="vRise">–</span></div>
+      <div><span class="lbl">Moonset</span><span class="val" id="vSet">–</span></div>
+      <div><span class="lbl">Sun altitude</span><span class="val" id="vSun">–</span></div>
     </div>
-
-    <div class="time more">
-      <div class="row"><span class="lbl">Tempo</span><span id="tval">Adesso</span></div>
-      <input type="range" id="tslider" min="-4320" max="4320" step="10" value="0" aria-label="Sposta il tempo di ±72 ore">
+    <div class="time">
+      <div class="row"><span class="lbl">Time</span><span class="lbl" id="tval">Now</span></div>
+      <input type="range" id="tslider" min="-4320" max="4320" step="10" value="0" aria-label="Shift time by up to 72 hours">
     </div>
-
-    <div class="btns more">
-      <button class="b primary" id="bSens">Attiva sensori</button>
-      <button class="b" id="bAim">Punta alla luna</button>
-      <button class="b" id="bCam">Fotocamera</button>
-      <button class="b" id="bNow">Adesso</button>
+    <div class="btns">
+      <button class="b primary" id="bSens">Enable sensors</button>
+      <button class="b" id="bAim">Point to Moon</button>
+      <button class="b" id="bCam">Camera</button>
+      <button class="b" id="bNow">Now</button>
     </div>
-
-    <details class="more">
-      <summary>Posizione e bussola</summary>
+    <details>
+      <summary>Location and compass</summary>
       <div class="set">
-        <label><span class="lbl">Latitudine</span><input id="iLat" inputmode="decimal" value="49.195"></label>
-        <label><span class="lbl">Longitudine</span><input id="iLon" inputmode="decimal" value="16.608"></label>
-        <label><span class="lbl">Declinazione °E</span><input id="iDec" inputmode="decimal" value="5.3"></label>
+        <label><span class="lbl">Latitude</span><input class="field" id="iLat" inputmode="decimal" value="49.195"></label>
+        <label><span class="lbl">Longitude</span><input class="field" id="iLon" inputmode="decimal" value="16.608"></label>
+        <label><span class="lbl">Declination °E</span><input class="field" id="iDec" inputmode="decimal" value="5.3"></label>
       </div>
       <div class="btns" style="margin-top:10px">
-        <button class="b" id="bGps">Usa GPS</button>
-        <button class="b" id="bReset">Azzera allineamento</button>
+        <button class="b" id="bGps">Use GPS</button>
+        <button class="b" id="bReset">Reset alignment</button>
       </div>
-      <p class="note">Con i sensori attivi, punta il telefono sulla luna vera e premi "Allinea alla luna" per correggere la bussola. In alternativa trascina in orizzontale per ruotare il cielo. La luna è disegnata più grande del reale (diametro vero circa 0,5°).</p>
+      <p class="note">With sensors on, point the phone at the real Moon and tap "Align to Moon" to correct the compass. You can also drag sideways to rotate the sky. The Moon is drawn larger than life; its true diameter is about half a degree.</p>
     </details>
+  </div>
+
+  <!-- MOOD -->
+  <div class="inner" data-panel="mood" hidden>
+    <div class="mhead">
+      <h2>How was today?</h2>
+      <input class="field" type="date" id="mDate" aria-label="Day to log">
+    </div>
+    <div class="scale" id="scale" role="group" aria-label="Mood"></div>
+    <div class="ctx" id="mCtx">–</div>
+    <textarea class="field" id="mNote" placeholder="Add a note (optional)" aria-label="Note"></textarea>
+    <div>
+      <div class="row" style="margin-bottom:4px"><span class="lbl">Recent days</span><span class="lbl" id="mCount">0 entries</span></div>
+      <div class="hist" id="hist"></div>
+    </div>
+    <div class="btns">
+      <button class="b" id="bExport">Export CSV</button>
+      <button class="b" id="bImport">Import CSV</button>
+      <input type="file" id="fImport" accept=".csv,text/csv" hidden>
+    </div>
+    <p class="note">Entries stay on this device. Export a CSV now and then as a backup.</p>
+  </div>
+
+  <!-- REPORT -->
+  <div class="inner" data-panel="report" hidden>
+    <div class="banner" id="rBanner" hidden><span>Sample data, not saved</span><button class="b" id="bExitDemo">Exit preview</button></div>
+    <p class="verdict" id="rVerdict">–</p>
+    <div class="kpis">
+      <div><span class="lbl">Entries</span><span class="val" id="kN">–</span></div>
+      <div><span class="lbl">Lunar cycles</span><span class="val" id="kC">–</span></div>
+      <div><span class="lbl">Correlation r</span><span class="val" id="kR">–</span></div>
+      <div><span class="lbl">p-value</span><span class="val" id="kP">–</span></div>
+    </div>
+    <div class="chart"><h3>Average mood by phase</h3><canvas id="cBars" height="190"></canvas></div>
+    <div class="chart"><h3>Mood against illumination</h3><canvas id="cScatter" height="200"></canvas></div>
+    <div class="btns" id="rDemoRow"><button class="b" id="bDemo">Preview with sample data</button></div>
+    <p class="note">r is Pearson's correlation between mood (−2 to +2) and the Moon's illuminated fraction. The p-value comes from a permutation test with 2,000 shuffles: it estimates how often a link this strong would appear by chance. Read results after at least two lunar cycles (about 59 days).</p>
   </div>
 </section>
 
@@ -126,9 +199,9 @@ const norm = a => ((a % 360) + 360) % 360;
 const n180 = a => { a = norm(a); return a > 180 ? a - 360 : a; };
 const sind = a => Math.sin(a * D2R), cosd = a => Math.cos(a * D2R);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-/* ---------- Astronomia (Meeus, termini principali) ---------- */
-// [coeff, D, M, M', F]
+/* ---------- Astronomy (Meeus, main terms) ---------- */
 const LON = [[6288774,0,0,1,0],[1274027,2,0,-1,0],[658314,2,0,0,0],[213618,0,0,2,0],[-185116,0,1,0,0],[-114332,0,0,0,2],[58793,2,0,-2,0],[57066,2,-1,-1,0],[53322,2,0,1,0],[45758,2,-1,0,0],[-40923,0,1,-1,0],[-34720,1,0,0,0],[-30383,0,1,1,0],[15327,2,0,0,-2],[-12528,0,0,1,2],[10980,0,0,1,-2],[10675,4,0,-1,0],[10034,0,0,3,0],[8548,4,0,-2,0],[-7888,2,1,-1,0],[-6766,2,1,0,0],[-5163,1,0,-1,0]];
 const LAT = [[5128122,0,0,0,1],[280602,0,0,1,1],[277693,0,0,1,-1],[173237,2,0,0,-1],[55413,2,0,-1,1],[46271,2,0,-1,-1],[32573,2,0,0,1],[17198,0,0,2,1],[9266,2,0,1,-1],[8822,0,0,2,-1]];
 const DIST = [[-20905355,0,0,1,0],[-3699111,2,0,-1,0],[-2955968,2,0,0,0],[-569925,0,0,2,0],[48888,0,1,0,0],[-3149,0,0,0,2],[246158,2,0,-2,0],[-152138,2,-1,-1,0],[-170733,2,0,1,0],[-204586,2,-1,0,0],[-129620,0,1,-1,0],[108743,1,0,0,0],[104755,0,1,1,0],[10321,2,0,0,-2],[79661,0,0,1,-2],[-34782,4,0,-1,0],[-23210,0,0,3,0],[-21636,4,0,-2,0]];
@@ -144,7 +217,6 @@ function refract(alt) {
   if (alt < -1.5) return alt;
   return alt + 1.02 / Math.tan((alt + 10.3 / (alt + 5.11)) * D2R) / 60;
 }
-
 function astro(date, lat, lon) {
   const jd = date.getTime() / 864e5 + 2440587.5, T = (jd - 2451545) / 36525;
   const Lp = norm(218.3164477 + 481267.88123421 * T);
@@ -158,11 +230,9 @@ function astro(date, lat, lon) {
   for (const [c, d, m, mp, f] of LAT) sb += c * sind(arg(d, m, mp, f));
   for (const [c, d, m, mp, f] of DIST) sr += c * cosd(arg(d, m, mp, f));
   const lam = norm(Lp + sl / 1e6), bet = sb / 1e6, dist = 385000.56 + sr / 1000;
-
   const Ls = norm(280.46646 + 36000.76983 * T);
   const lamS = norm(Ls + 1.914602 * sind(M) + 0.019993 * sind(2 * M));
   const rS = (1.000140 - 0.016708 * cosd(M) - 0.000139 * cosd(2 * M)) * 149597870.7;
-
   const eps = 23.439291 - 0.0130042 * T;
   const eq = (l, b) => ({
     ra: norm(R2D * Math.atan2(sind(l) * cosd(eps) - Math.tan(b * D2R) * sind(eps), cosd(l))),
@@ -170,12 +240,10 @@ function astro(date, lat, lon) {
   });
   const m = eq(lam, bet), s = eq(lamS, 0);
   const lst = norm(280.46061837 + 360.98564736629 * (jd - 2451545) + lon);
-
   const mh = horiz(m.ra, m.dec, lst, lat);
-  let alt = mh.alt - R2D * Math.asin(6378.14 / dist) * cosd(mh.alt); // parallasse
+  let alt = mh.alt - R2D * Math.asin(6378.14 / dist) * cosd(mh.alt);
   alt = refract(alt);
   const sh = horiz(s.ra, s.dec, lst, lat);
-
   const cpsi = sind(s.dec) * sind(m.dec) + cosd(s.dec) * cosd(m.dec) * cosd(s.ra - m.ra);
   const psi = Math.acos(clamp(cpsi, -1, 1));
   const i = Math.atan2(rS * Math.sin(psi), dist - rS * Math.cos(psi));
@@ -186,18 +254,19 @@ function astro(date, lat, lon) {
   return { az: mh.az, alt, dist, illum, i, chi, q, elong, age: elong / 360 * 29.530589,
            sunAz: sh.az, sunAlt: refract(sh.alt), lst };
 }
-
 function phaseName(e) {
-  if (e < 6 || e > 354) return "Luna nuova";
-  if (e < 84) return "Falce crescente";
-  if (e < 96) return "Primo quarto";
-  if (e < 174) return "Gibbosa crescente";
-  if (e < 186) return "Luna piena";
-  if (e < 264) return "Gibbosa calante";
-  if (e < 276) return "Ultimo quarto";
-  return "Falce calante";
+  if (e < 6 || e > 354) return "New Moon";
+  if (e < 84) return "Waxing Crescent";
+  if (e < 96) return "First Quarter";
+  if (e < 174) return "Waxing Gibbous";
+  if (e < 186) return "Full Moon";
+  if (e < 264) return "Waning Gibbous";
+  if (e < 276) return "Last Quarter";
+  return "Waning Crescent";
 }
-const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const BINS = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
+const binOf = e => Math.floor(norm(e + 22.5) / 45) % 8;
+const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 const dirName = az => DIRS[Math.round(norm(az) / 22.5) % 16];
 
 function riseSet(t0, lat, lon) {
@@ -215,39 +284,72 @@ function riseSet(t0, lat, lon) {
   return { rise, set };
 }
 
-/* Stelle luminose (J2000): RA, Dec, magnitudine, nome */
-const STARS = [[101.287,-16.716,-1.46,"Sirio"],[213.915,19.182,-0.05,"Arturo"],[279.234,38.784,0.03,"Vega"],[79.172,45.998,0.08,"Capella"],[78.634,-8.202,0.13,"Rigel"],[114.825,5.225,0.34,"Procione"],[88.793,7.407,0.5,"Betelgeuse"],[297.696,8.868,0.76,"Altair"],[68.98,16.509,0.86,"Aldebaran"],[247.352,-26.432,0.96,"Antares"],[201.298,-11.161,0.97,"Spica"],[116.329,28.026,1.14,"Polluce"],[344.413,-29.622,1.16,"Fomalhaut"],[310.358,45.28,1.25,"Deneb"],[152.093,11.967,1.35,"Regolo"],[37.955,89.264,1.98,"Polare"],[113.65,31.888,1.58,""],[81.283,6.35,1.64,""],[84.053,-1.202,1.69,""],[85.19,-1.943,1.77,""],[83.002,-0.299,2.23,""],[165.932,61.751,1.79,""],[165.46,56.382,2.37,""],[193.507,55.96,1.77,""],[200.981,54.925,2.23,""],[206.885,49.313,1.86,""],[178.457,53.695,2.44,""],[183.856,57.033,3.31,""],[10.127,56.537,2.24,""],[2.295,59.15,2.27,""],[14.177,60.717,2.47,""],[21.454,60.235,2.68,""],[28.599,63.67,3.38,""]];
+/* Bright stars (J2000): RA, Dec, magnitude, name */
+const STARS = [[101.287,-16.716,-1.46,"Sirius"],[213.915,19.182,-0.05,"Arcturus"],[279.234,38.784,0.03,"Vega"],[79.172,45.998,0.08,"Capella"],[78.634,-8.202,0.13,"Rigel"],[114.825,5.225,0.34,"Procyon"],[88.793,7.407,0.5,"Betelgeuse"],[297.696,8.868,0.76,"Altair"],[68.98,16.509,0.86,"Aldebaran"],[247.352,-26.432,0.96,"Antares"],[201.298,-11.161,0.97,"Spica"],[116.329,28.026,1.14,"Pollux"],[344.413,-29.622,1.16,"Fomalhaut"],[310.358,45.28,1.25,"Deneb"],[152.093,11.967,1.35,"Regulus"],[37.955,89.264,1.98,"Polaris"],[113.65,31.888,1.58,""],[81.283,6.35,1.64,""],[84.053,-1.202,1.69,""],[85.19,-1.943,1.77,""],[83.002,-0.299,2.23,""],[165.932,61.751,1.79,""],[165.46,56.382,2.37,""],[193.507,55.96,1.77,""],[200.981,54.925,2.23,""],[206.885,49.313,1.86,""],[178.457,53.695,2.44,""],[183.856,57.033,3.31,""],[10.127,56.537,2.24,""],[2.295,59.15,2.27,""],[14.177,60.717,2.47,""],[21.454,60.235,2.68,""],[28.599,63.67,3.38,""]];
 
-/* ---------- Stato ---------- */
+/* ---------- Mood statistics (pure functions) ---------- */
+function pearson(xs, ys) {
+  const n = xs.length; if (n < 3) return 0;
+  let mx = 0, my = 0; for (let k = 0; k < n; k++) { mx += xs[k]; my += ys[k]; } mx /= n; my /= n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let k = 0; k < n; k++) { const a = xs[k] - mx, b = ys[k] - my; sxy += a * b; sxx += a * a; syy += b * b; }
+  return sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0;
+}
+function permP(xs, ys, r, iters) {
+  if (xs.length < 3 || r === 0) return 1;
+  const y = ys.slice(); let hits = 0;
+  for (let it = 0; it < iters; it++) {
+    for (let k = y.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); const t = y[k]; y[k] = y[j]; y[j] = t; }
+    if (Math.abs(pearson(xs, y)) >= Math.abs(r) - 1e-12) hits++;
+  }
+  return (hits + 1) / (iters + 1);
+}
+function analyse(list) {
+  const n = list.length;
+  const xs = list.map(e => e.il * 100), ys = list.map(e => e.m);
+  const r = pearson(xs, ys), p = permP(xs, ys, r, 2000);
+  const sums = Array(8).fill(0), cnt = Array(8).fill(0);
+  for (const e of list) { const b = binOf(e.e); sums[b] += e.m; cnt[b]++; }
+  const means = sums.map((s, k) => cnt[k] ? s / cnt[k] : null);
+  const ds = list.map(e => Date.parse(e.d + "T12:00:00"));
+  const span = n ? (Math.max(...ds) - Math.min(...ds)) / 864e5 + 1 : 0;
+  let mx = 0, my = 0; xs.forEach((x, k) => { mx += x; my += ys[k]; }); mx /= n || 1; my /= n || 1;
+  let sxy = 0, sxx = 0; xs.forEach((x, k) => { sxy += (x - mx) * (ys[k] - my); sxx += (x - mx) ** 2; });
+  const slope = sxx ? sxy / sxx : 0;
+  return { n, r, p, means, cnt, cycles: span / 29.530589, slope, icpt: my - slope * mx, avg: my };
+}
+
+/* ---------- State ---------- */
 const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
 const cv = $("sky"), ctx = cv.getContext("2d");
-const mini = $("mini"), mctx = mini.getContext("2d");
-const panel = $("panel"), video = $("cam");
+const mctx = $("mini").getContext("2d");
+const sheet = $("sheet"), video = $("cam");
 
-let lat = 49.195, lon = 16.608, decl = 5.3, locName = "Brno (predefinita)";
-try {
-  const s = JSON.parse(localStorage.getItem("moon-loc") || "null");
-  if (s) { lat = s.lat; lon = s.lon; decl = s.decl ?? decl; locName = s.name || "manuale"; }
-} catch (e) {}
+const loc = store.get("mm-loc", null);
+let lat = loc?.lat ?? 49.195, lon = loc?.lon ?? 16.608, decl = loc?.decl ?? 5.3, locName = loc?.name ?? "Brno (default)";
 $("iLat").value = lat; $("iLon").value = lon; $("iDec").value = decl;
+const saveLoc = () => store.set("mm-loc", { lat, lon, decl, name: locName });
 
 let offsetMin = 0, st = null, rs = { rise: null, set: null }, rsKey = "";
-let sensorOn = false, gotSensor = false, iosOff = null, userOff = 0;
-try { userOff = +localStorage.getItem("moon-off") || 0; } catch (e) {}
+let sensorOn = false, gotSensor = false, iosOff = null, userOff = +store.get("mm-off", 0) || 0;
 let yaw = 120, pitch = 15;
 let fwd = [0, 1, 0], up = [0, 0, 1], tFwd = fwd.slice(), tUp = up.slice();
+let tab = "sky";
 
 const now = () => Date.now() + offsetMin * 60000;
 const vec = (az, alt) => [cosd(alt) * sind(az), cosd(alt) * cosd(az), sind(alt)];
 const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
 const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0]/l, a[1]/l, a[2]/l]; };
+const fmt1 = v => v.toFixed(1);
+let toastT = 0;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1600); }
 
-function saveLoc() {
-  try { localStorage.setItem("moon-loc", JSON.stringify({ lat, lon, decl, name: locName })); } catch (e) {}
-}
-
-/* ---------- Sensori ---------- */
+/* ---------- Sensors ---------- */
 function onOri(e) {
   if (e.alpha == null) return;
   let a = e.alpha;
@@ -267,54 +369,56 @@ function onOri(e) {
   tUp = [s*X[0] + c*Y[0], s*X[1] + c*Y[1], s*X[2] + c*Y[2]];
   tFwd = [-Z[0], -Z[1], -Z[2]];
   if (!gotSensor) { gotSensor = true; fwd = tFwd.slice(); up = tUp.slice(); }
-  sensorOn = true;
-  updateChips();
+  if (!sensorOn) { sensorOn = true; updateStatus(); }
 }
 async function enableSensors(fromClick) {
   try {
     if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
       if (!fromClick) return;
-      const r = await DeviceOrientationEvent.requestPermission();
-      if (r !== "granted") throw new Error("negato");
+      if (await DeviceOrientationEvent.requestPermission() !== "granted") throw new Error("denied");
     }
-  } catch (e) { $("cSens").innerHTML = "Sensori: <b>negati</b>"; return; }
+  } catch (e) { $("sSens").textContent = "Sensors blocked"; return; }
   if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onOri, true);
   else addEventListener("deviceorientation", onOri, true);
-  setTimeout(() => { if (!gotSensor && fromClick) $("cSens").innerHTML = "Sensori: <b>non disponibili</b> · trascina"; }, 1500);
+  setTimeout(() => { if (!gotSensor && fromClick) $("sSens").textContent = "No sensors here · drag to look"; }, 1500);
+}
+function updateStatus() {
+  $("sSens").innerHTML = sensorOn ? "<b>Sensors on</b>" : "Drag to look";
+  $("bAim").textContent = sensorOn ? "Align to Moon" : "Point to Moon";
+  $("bSens").hidden = sensorOn;
 }
 
-/* ---------- Input ---------- */
+/* ---------- Sky input ---------- */
 let drag = null;
 cv.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
 cv.addEventListener("pointermove", e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
   const k = 62 / Math.max(innerWidth, innerHeight);
-  if (sensorOn) { userOff = norm(userOff + dx * k); try { localStorage.setItem("moon-off", userOff); } catch (er) {} }
+  if (sensorOn) { userOff = norm(userOff + dx * k); store.set("mm-off", userOff); }
   else { yaw = norm(yaw - dx * k); pitch = clamp(pitch + dy * k, -89, 89); }
 });
 const endDrag = () => drag = null;
 cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
 
-$("handle").onclick = () => panel.classList.toggle("min");
 $("bSens").onclick = () => enableSensors(true);
 $("bAim").onclick = () => {
   if (!st) return;
   if (sensorOn) {
     const heading = norm(R2D * Math.atan2(fwd[0], fwd[1]));
-    userOff = norm(userOff + n180(heading - st.az));
-    try { localStorage.setItem("moon-off", userOff); } catch (e) {}
+    userOff = norm(userOff + n180(heading - st.az)); store.set("mm-off", userOff); toast("Compass aligned");
   } else { yaw = st.az; pitch = clamp(st.alt, -89, 89); }
 };
-$("bReset").onclick = () => { userOff = 0; try { localStorage.setItem("moon-off", 0); } catch (e) {} };
+$("bReset").onclick = () => { userOff = 0; store.set("mm-off", 0); toast("Alignment reset"); };
 $("bNow").onclick = () => { offsetMin = 0; $("tslider").value = 0; tick(); };
 $("tslider").oninput = e => { offsetMin = +e.target.value; tick(); };
 for (const id of ["iLat", "iLon", "iDec"]) $(id).onchange = () => {
-  const la = parseFloat($("iLat").value.replace(",", ".")), lo = parseFloat($("iLon").value.replace(",", ".")), de = parseFloat($("iDec").value.replace(",", "."));
+  const p = id => parseFloat($(id).value.replace(",", "."));
+  const la = p("iLat"), lo = p("iLon"), de = p("iDec");
   if (isFinite(la) && Math.abs(la) <= 90) lat = la;
   if (isFinite(lo) && Math.abs(lo) <= 180) lon = lo;
   if (isFinite(de) && Math.abs(de) <= 30) decl = de;
-  if (id !== "iDec") locName = "manuale";
+  if (id !== "iDec") locName = "manual";
   saveLoc(); rsKey = ""; tick();
 };
 function gps() {
@@ -322,19 +426,19 @@ function gps() {
   navigator.geolocation.getCurrentPosition(p => {
     lat = +p.coords.latitude.toFixed(4); lon = +p.coords.longitude.toFixed(4); locName = "GPS";
     $("iLat").value = lat; $("iLon").value = lon; saveLoc(); rsKey = ""; tick();
-  }, () => { $("cLoc").innerHTML = "Posizione: <b>" + locName + "</b>"; }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+  }, () => {}, { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
 }
 $("bGps").onclick = gps;
 let camStream = null;
 $("bCam").onclick = async () => {
-  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; video.hidden = true; $("bCam").textContent = "Fotocamera"; return; }
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; video.hidden = true; $("bCam").textContent = "Camera"; return; }
   try {
     camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-    video.srcObject = camStream; video.hidden = false; await video.play(); $("bCam").textContent = "Spegni fotocamera";
-  } catch (e) { $("bCam").textContent = "Fotocamera non disponibile"; }
+    video.srcObject = camStream; video.hidden = false; await video.play(); $("bCam").textContent = "Camera off";
+  } catch (e) { toast("Camera not available"); }
 };
 
-/* ---------- Texture lunare ---------- */
+/* ---------- Moon drawing ---------- */
 const tex = document.createElement("canvas"); tex.width = tex.height = 256;
 (() => {
   const t = tex.getContext("2d"), r = 128;
@@ -351,18 +455,19 @@ const tex = document.createElement("canvas"); tex.width = tex.height = 256;
   for (const [x, y, s] of [[-.15,.72,.045],[-.3,-.12,.035],[-.62,-.2,.025]]) { t.beginPath(); t.arc(r + x*r, r + y*r, s*r, 0, 7); t.fill(); }
   t.restore();
 })();
-
-// zenAng: angolo canvas (rad) della direzione zenit sullo schermo, nel punto della luna
-function drawMoon(c, x, y, R, s, zenAng, dim) {
-  const limb = zenAng - (s.chi - s.q) * D2R;      // direzione del lembo illuminato
-  const north = zenAng + s.q * D2R;                // nord lunare ~ nord celeste
+// zenAng: canvas angle (rad) of the zenith direction at the Moon's screen position
+function drawMoon(c, x, y, R, s, zenAng, dim, glow) {
+  const limb = zenAng - (s.chi - s.q) * D2R;
+  const north = zenAng + s.q * D2R;
   const cI = Math.cos(s.i);
   c.save(); c.translate(x, y); c.globalAlpha = dim;
-  const gl = c.createRadialGradient(0, 0, R * 0.8, 0, 0, R * 3.2);
-  gl.addColorStop(0, `rgba(230,228,215,${0.22 * s.illum})`); gl.addColorStop(1, "rgba(230,228,215,0)");
-  c.fillStyle = gl; c.beginPath(); c.arc(0, 0, R * 3.2, 0, 7); c.fill();
-  c.fillStyle = "#1b202c"; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill();
-  c.save(); c.rotate(north + Math.PI / 2); c.globalAlpha = dim * 0.14; c.drawImage(tex, -R, -R, 2*R, 2*R); c.restore();
+  if (glow) {
+    const gl = c.createRadialGradient(0, 0, R * 0.8, 0, 0, R * 3.2);
+    gl.addColorStop(0, `rgba(230,228,215,${0.2 * s.illum})`); gl.addColorStop(1, "rgba(230,228,215,0)");
+    c.fillStyle = gl; c.beginPath(); c.arc(0, 0, R * 3.2, 0, 7); c.fill();
+  }
+  c.fillStyle = "#1a1e29"; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill();
+  c.save(); c.rotate(north + Math.PI / 2); c.globalAlpha = dim * 0.12; c.drawImage(tex, -R, -R, 2*R, 2*R); c.restore();
   c.save(); c.rotate(limb);
   c.beginPath(); c.arc(0, 0, R, -Math.PI / 2, Math.PI / 2, false);
   for (let k = 0; k <= 48; k++) { const th = Math.PI / 2 - Math.PI * k / 48; c.lineTo(-cI * R * Math.cos(th), R * Math.sin(th)); }
@@ -370,20 +475,16 @@ function drawMoon(c, x, y, R, s, zenAng, dim) {
   c.rotate(north + Math.PI / 2 - limb); c.drawImage(tex, -R, -R, 2*R, 2*R);
   c.restore(); c.restore();
 }
+// Idealised moon for a given elongation (northern-hemisphere view)
+const iconState = e => { const i = Math.acos(-cosd(e)); return { i, illum: (1 + Math.cos(i)) / 2, chi: norm(e) < 180 ? -90 : 90, q: 0 }; };
 
-/* ---------- Aggiornamento dati ---------- */
-const fmtT = new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" });
-const fmtD = new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+/* ---------- Sky panel data ---------- */
+const fmtT = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
+const fmtD = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 function fmtRS(t) {
   if (!t) return "—";
-  const d = new Date(t), today = new Date(now());
-  return fmtT.format(d) + (d.getDate() !== today.getDate() ? " <small>+1g</small>" : "");
-}
-function updateChips() {
-  $("cSens").className = "chip" + (sensorOn ? " on" : "");
-  $("cSens").innerHTML = sensorOn ? "Sensori: <b>attivi</b>" : $("cSens").innerHTML;
-  $("bAim").textContent = sensorOn ? "Allinea alla luna" : "Punta alla luna";
-  $("cLoc").innerHTML = `Posizione: <b>${locName}</b>`;
+  const d = new Date(t), ref = new Date(now());
+  return fmtT.format(d) + (d.getDate() !== ref.getDate() ? " <small>tmrw</small>" : "");
 }
 function tick() {
   const t = now();
@@ -392,32 +493,233 @@ function tick() {
   if (key !== rsKey) { rs = riseSet(t, lat, lon); rsKey = key; }
   $("pName").textContent = phaseName(st.elong);
   $("pIll").textContent = Math.round(st.illum * 100) + "%";
-  $("pAge").textContent = st.age.toFixed(1).replace(".", ",") + " g";
-  $("vAz").innerHTML = st.az.toFixed(1).replace(".", ",") + "° <small>" + dirName(st.az) + "</small>";
-  $("vAlt").textContent = st.alt.toFixed(1).replace(".", ",") + "°";
-  $("vDist").innerHTML = Math.round(st.dist).toLocaleString("it-IT") + " <small>km</small>";
+  $("pAge").textContent = fmt1(st.age);
+  $("vAz").innerHTML = fmt1(st.az) + "° <small>" + dirName(st.az) + "</small>";
+  $("vAlt").textContent = fmt1(st.alt) + "°";
+  $("vDist").innerHTML = Math.round(st.dist).toLocaleString("en-US") + " <small>km</small>";
   $("vRise").innerHTML = fmtRS(rs.rise);
   $("vSet").innerHTML = fmtRS(rs.set);
-  $("vSun").textContent = st.sunAlt.toFixed(0) + "°";
-  $("tval").textContent = offsetMin === 0 ? "Adesso · " + fmtT.format(new Date(t)) : fmtD.format(new Date(t)) + "  (" + (offsetMin > 0 ? "+" : "−") + Math.floor(Math.abs(offsetMin) / 60) + " h " + (Math.abs(offsetMin) % 60) + " min)";
-  $("cAim").innerHTML = "Luna: <b>" + dirName(st.az) + " " + Math.round(st.az) + "°, " + (st.alt >= 0 ? "alt " + Math.round(st.alt) + "°" : "sotto l'orizzonte") + "</b>";
-  mctx.clearRect(0, 0, 128, 128);
-  drawMoon(mctx, 64, 64, 44, st, -Math.PI / 2, 1);
+  $("vSun").textContent = Math.round(st.sunAlt) + "°";
+  const h = Math.floor(Math.abs(offsetMin) / 60), mi = Math.abs(offsetMin) % 60;
+  $("tval").textContent = offsetMin === 0 ? "Now · " + fmtT.format(new Date(t)) : fmtD.format(new Date(t)) + " (" + (offsetMin > 0 ? "+" : "−") + h + "h" + (mi ? " " + mi + "m" : "") + ")";
+  $("sAim").textContent = "Moon " + dirName(st.az) + " " + Math.round(st.az) + "° · " + (st.alt >= 0 ? Math.round(st.alt) + "° up" : "below horizon");
+  mctx.clearRect(0, 0, 112, 112);
+  drawMoon(mctx, 56, 56, 40, st, -Math.PI / 2, 1, false);
 }
 
-/* ---------- Disegno ---------- */
+/* ---------- Mood log ---------- */
+const MOODS = [
+  { v: -2, l: "Awful" }, { v: -1, l: "Bad" }, { v: 0, l: "Okay" }, { v: 1, l: "Good" }, { v: 2, l: "Great" }
+];
+const moodCol = v => css("--mood" + (v + 2));
+const moodLbl = v => MOODS[v + 2].l;
+let entries = store.get("mm-entries", {});
+let demo = null;
+const todayStr = () => new Date().toLocaleDateString("sv-SE");
+function moonOn(d) {
+  const [y, m, dd] = d.split("-").map(Number);
+  const s = astro(new Date(y, m - 1, dd, 12), lat, lon);
+  return { e: +s.elong.toFixed(2), il: +s.illum.toFixed(4) };
+}
+const saveEntries = () => store.set("mm-entries", entries);
+const sc = $("scale");
+MOODS.forEach(m => {
+  const b = document.createElement("button");
+  b.type = "button"; b.dataset.v = m.v; b.setAttribute("aria-pressed", "false");
+  b.style.setProperty("--c", `var(--mood${m.v + 2})`);
+  b.innerHTML = `<i></i>${m.l}`;
+  b.onclick = () => {
+    const d = $("mDate").value || todayStr();
+    entries[d] = { ...(entries[d] || {}), m: m.v, ...moonOn(d), n: $("mNote").value.trim() };
+    saveEntries(); renderMood(); toast("Saved " + m.l.toLowerCase() + " for " + (d === todayStr() ? "today" : d));
+  };
+  sc.appendChild(b);
+});
+$("mDate").value = todayStr();
+$("mDate").max = todayStr();
+$("mDate").onchange = renderMood;
+let noteT = 0;
+$("mNote").oninput = () => {
+  clearTimeout(noteT);
+  noteT = setTimeout(() => {
+    const d = $("mDate").value; if (!entries[d]) return;
+    entries[d].n = $("mNote").value.trim(); saveEntries();
+  }, 500);
+};
+function renderMood() {
+  const d = $("mDate").value || todayStr(), e = entries[d], mo = moonOn(d);
+  [...sc.children].forEach(b => b.setAttribute("aria-pressed", String(!!e && +b.dataset.v === e.m)));
+  $("mNote").value = e?.n || "";
+  $("mCtx").textContent = "Moon that day: " + BINS[binOf(mo.e)] + ", " + Math.round(mo.il * 100) + "% lit";
+  const keys = Object.keys(entries).sort().reverse();
+  $("mCount").textContent = keys.length + (keys.length === 1 ? " entry" : " entries");
+  const hist = $("hist");
+  if (!keys.length) { hist.innerHTML = `<p class="empty">No entries yet. Tap a mood above to log today.</p>`; return; }
+  hist.innerHTML = "";
+  for (const k of keys.slice(0, 14)) {
+    const x = entries[k], row = document.createElement("div");
+    const dt = new Date(k + "T12:00:00");
+    row.innerHTML = `<span class="d"></span><span class="p"></span><span class="m"><i></i><span></span></span>`;
+    row.children[0].textContent = dt.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    row.children[1].textContent = BINS[binOf(x.e)] + (x.n ? " · " + x.n : "");
+    row.querySelector("i").style.background = moodCol(x.m);
+    row.querySelector(".m span").textContent = moodLbl(x.m);
+    row.style.cursor = "pointer";
+    row.onclick = () => { $("mDate").value = k; renderMood(); };
+    hist.appendChild(row);
+  }
+}
+
+/* CSV */
+const csvEsc = s => /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+$("bExport").onclick = () => {
+  const keys = Object.keys(entries).sort();
+  if (!keys.length) { toast("Nothing to export yet"); return; }
+  const lines = ["date,mood,mood_label,phase,illumination_pct,elongation_deg,note"];
+  for (const k of keys) { const e = entries[k]; lines.push([k, e.m, moodLbl(e.m), BINS[binOf(e.e)], (e.il * 100).toFixed(1), e.e.toFixed(1), csvEsc(e.n || "")].join(",")); }
+  const url = URL.createObjectURL(new Blob([lines.join("\n") + "\n"], { type: "text/csv" }));
+  const a = document.createElement("a"); a.href = url; a.download = "moon-mood-" + todayStr() + ".csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+};
+function parseCSV(text) {
+  const rows = []; let row = [], f = "", q = false;
+  for (let k = 0; k < text.length; k++) {
+    const ch = text[k];
+    if (q) { if (ch === '"') { if (text[k + 1] === '"') { f += '"'; k++; } else q = false; } else f += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ",") { row.push(f); f = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[k + 1] === "\n") k++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += ch;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+$("bImport").onclick = () => $("fImport").click();
+$("fImport").onchange = async e => {
+  const file = e.target.files[0]; if (!file) return;
+  const rows = parseCSV(await file.text()); let added = 0;
+  const h = rows[0].map(s => s.trim().toLowerCase());
+  const iD = h.indexOf("date"), iM = h.indexOf("mood"), iN = h.indexOf("note");
+  for (const r of rows.slice(1)) {
+    const d = (r[iD] || "").trim(), m = parseInt(r[iM], 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !(m >= -2 && m <= 2)) continue;
+    entries[d] = { m, ...moonOn(d), n: iN >= 0 ? (r[iN] || "").trim() : "" }; added++;
+  }
+  saveEntries(); renderMood(); toast("Imported " + added + " days"); e.target.value = "";
+};
+
+/* ---------- Report ---------- */
+function sampleData() {
+  const out = {}, start = Date.now() - 120 * 864e5;
+  let walk = 0;
+  for (let k = 0; k < 120; k++) {
+    if (Math.random() < 0.18) continue;
+    const d = new Date(start + k * 864e5).toLocaleDateString("sv-SE"), mo = moonOn(d);
+    walk = clamp(walk * 0.6 + (Math.random() - 0.5) * 1.6, -2, 2);
+    out[d] = { m: Math.round(clamp(walk + (Math.random() - 0.5), -2, 2)), ...mo, n: "" };
+  }
+  return out;
+}
+$("bDemo").onclick = () => { demo = sampleData(); renderReport(); };
+$("bExitDemo").onclick = () => { demo = null; renderReport(); };
+
+function prepCanvas(c, h) {
+  const w = c.parentElement.clientWidth, dpr = Math.min(devicePixelRatio || 1, 2);
+  c.width = w * dpr; c.height = h * dpr; c.style.height = h + "px";
+  const x = c.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+  return [x, w, h];
+}
+const sgn = v => (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(2);
+function renderReport() {
+  const src = demo || entries, list = Object.entries(src).map(([d, e]) => ({ d, ...e }));
+  $("rBanner").hidden = !demo;
+  $("rDemoRow").hidden = !!demo || list.length >= 10;
+  const A = analyse(list);
+  $("kN").textContent = A.n;
+  $("kC").textContent = A.n ? A.cycles.toFixed(1) : "–";
+  $("kR").textContent = A.n >= 3 ? sgn(A.r) : "–";
+  $("kP").textContent = A.n >= 3 ? (A.p < 0.001 ? "<0.001" : A.p.toFixed(3)) : "–";
+
+  let v;
+  if (A.n < 10) v = `Log at least a couple of weeks before reading anything into this. You have ${A.n} ${A.n === 1 ? "entry" : "entries"} so far.`;
+  else {
+    const early = A.cycles < 2 ? `Early read, ${A.cycles.toFixed(1)} lunar cycles in. ` : "";
+    if (A.p < 0.05) {
+      const s = Math.abs(A.r) < 0.3 ? "weak" : Math.abs(A.r) < 0.5 ? "moderate" : "strong";
+      v = early + `Your mood tends to ${A.r > 0 ? "rise" : "drop"} as the Moon gets fuller. The link is ${s} and could still be chance, so keep logging.`;
+    } else v = early + `No clear link between your mood and the Moon's phase so far. Day-to-day changes look unrelated to how full the Moon is.`;
+    let best = -1;
+    A.means.forEach((m, k) => { if (A.cnt[k] >= 3 && (best < 0 || m > A.means[best])) best = k; });
+    if (best >= 0) v += ` Best phase: ${BINS[best]} (average ${sgn(A.means[best])}, ${A.cnt[best]} days).`;
+  }
+  $("rVerdict").textContent = v;
+  drawBars(A); drawScatter(list, A);
+}
+function drawBars(A) {
+  const [x, w, h] = prepCanvas($("cBars"), 190);
+  const left = 26, right = 6, top = 8, ch = 112, y0 = top + ch / 2, bw = (w - left - right) / 8;
+  x.font = "11px " + css("--f"); x.fillStyle = css("--mute"); x.textAlign = "right"; x.textBaseline = "middle";
+  x.fillText("+2", left - 6, top + 4); x.fillText("0", left - 6, y0); x.fillText("−2", left - 6, top + ch - 4);
+  x.fillStyle = "rgba(236,238,243,.12)"; x.fillRect(left, y0, w - left - right, 1);
+  x.textAlign = "center"; x.textBaseline = "alphabetic";
+  for (let k = 0; k < 8; k++) {
+    const cx = left + bw * (k + 0.5), m = A.means[k];
+    if (m != null) {
+      const yv = y0 - m / 2 * (ch / 2), bwid = Math.min(26, bw * 0.55);
+      x.fillStyle = moodCol(clamp(Math.round(m), -2, 2));
+      const y1 = Math.min(y0, yv), hh = Math.max(2, Math.abs(yv - y0));
+      x.beginPath(); x.roundRect ? x.roundRect(cx - bwid / 2, y1, bwid, hh, 3) : x.rect(cx - bwid / 2, y1, bwid, hh); x.fill();
+    }
+    drawMoon(x, cx, top + ch + 22, 9, iconState(k * 45), -Math.PI / 2, 1, false);
+    x.fillStyle = css("--mute"); x.fillText(A.cnt[k] ? A.cnt[k] + "d" : "–", cx, top + ch + 52);
+  }
+}
+function drawScatter(list, A) {
+  const [x, w, h] = prepCanvas($("cScatter"), 200);
+  const left = 46, right = 8, top = 8, bottom = 26, pw = w - left - right, ph = h - top - bottom;
+  const X = il => left + il / 100 * pw, Y = m => top + (2 - m) / 4 * ph;
+  x.font = "11px " + css("--f"); x.fillStyle = css("--mute"); x.textAlign = "right"; x.textBaseline = "middle";
+  MOODS.forEach(m => { x.fillText(m.l, left - 8, Y(m.v)); });
+  x.fillStyle = "rgba(236,238,243,.06)";
+  MOODS.forEach(m => x.fillRect(left, Y(m.v), pw, 1));
+  x.textAlign = "center"; x.textBaseline = "alphabetic"; x.fillStyle = css("--mute");
+  x.fillText("New", X(0) + 12, h - 6); x.fillText("50% lit", X(50), h - 6); x.fillText("Full", X(100) - 12, h - 6);
+  const hash = s => { let v = 0; for (const ch of s) v = (v * 31 + ch.charCodeAt(0)) | 0; return ((v >>> 0) % 1000) / 1000 - 0.5; };
+  for (const e of list) {
+    x.fillStyle = moodCol(e.m); x.globalAlpha = 0.8;
+    x.beginPath(); x.arc(X(e.il * 100), Y(e.m) + hash(e.d) * ph * 0.12, 3.2, 0, 7); x.fill();
+  }
+  x.globalAlpha = 1;
+  if (list.length >= 3) {
+    x.strokeStyle = css("--accent"); x.lineWidth = 1.5;
+    x.beginPath(); x.moveTo(X(0), Y(clamp(A.icpt, -2, 2))); x.lineTo(X(100), Y(clamp(A.icpt + A.slope * 100, -2, 2))); x.stroke();
+  }
+}
+
+/* ---------- Tabs ---------- */
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll("[role=tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+  document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== t);
+  sheet.classList.toggle("tall", t !== "sky");
+  sheet.scrollTop = 0;
+  if (t === "mood") renderMood();
+  if (t === "report") renderReport();
+}
+document.querySelectorAll("[role=tab]").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+
+/* ---------- Sky render ---------- */
 let W = 0, H = 0, DPR = 1;
 function resize() {
   DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
   cv.width = W * DPR; cv.height = H * DPR;
+  if (tab === "report") renderReport();
 }
 addEventListener("resize", resize); resize();
-
-function lerpCol(a, b, t) { return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`; }
+const lerpCol = (a, b, t) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
 
 function frame() {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  // orientamento
   if (sensorOn) {
     fwd = nrm(fwd.map((v, i) => v + (tFwd[i] - v) * 0.25));
     up = nrm(up.map((v, i) => v + (tUp[i] - v) * 0.25));
@@ -427,24 +729,21 @@ function frame() {
   }
   up = nrm(up.map((v, i) => v - dot(up, fwd) * fwd[i]));
   const right = cross(fwd, up);
-
-  const ph = panel.getBoundingClientRect().height;
-  const cx = W / 2, cy = Math.max(80, (H - ph) / 2 + 20);
+  const ph = sheet.getBoundingClientRect().height;
+  const cx = W / 2, cy = Math.max(90, (H - ph) / 2 + 24);
   const f = (Math.max(W, H) / 2) / Math.tan(31 * D2R);
   const proj = v => { const z = dot(v, fwd); if (z < 0.03) return null; return [cx + f * dot(v, right) / z, cy - f * dot(v, up) / z]; };
 
-  // cielo
   const sa = st ? st.sunAlt : -30, tt = clamp((sa + 16) / 22, 0, 1);
   if (camStream) ctx.clearRect(0, 0, W, H);
   else {
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, lerpCol([5, 8, 18], [46, 96, 152], tt));
-    g.addColorStop(1, lerpCol([13, 19, 36], [150, 182, 214], tt));
+    g.addColorStop(0, lerpCol([5, 7, 13], [46, 96, 152], tt));
+    g.addColorStop(1, lerpCol([12, 16, 30], [150, 182, 214], tt));
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   }
-
-  // terreno: semipiano sotto l'orizzonte (l'orizzonte proiettato è una retta)
-  const Uz = [0, 0, 1], uf = dot(Uz, fwd), ur = dot(Uz, right), uu = dot(Uz, up);
+  // ground: half-plane below the horizon (the projected horizon is a straight line)
+  const uf = fwd[2], ur = right[2], uu = up[2];
   const gfun = (x, y) => uf + ur * (x - cx) / f - uu * (y - cy) / f;
   const corners = [[0, 0], [W, 0], [W, H], [0, H]], poly = [];
   for (let k = 0; k < 4; k++) {
@@ -453,90 +752,67 @@ function frame() {
     if ((ga < 0) !== (gb < 0)) { const t = ga / (ga - gb); poly.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
   }
   if (poly.length > 2) {
-    ctx.fillStyle = camStream ? "rgba(4,6,12,.28)" : lerpCol([3, 5, 9], [40, 46, 40], tt);
+    ctx.fillStyle = camStream ? "rgba(4,6,12,.3)" : lerpCol([3, 4, 8], [38, 44, 40], tt);
     ctx.beginPath(); poly.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill();
   }
-
-  // griglia
-  const line = (pts, dash, col, w) => {
-    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath();
-    let on = false;
-    for (const v of pts) { const p = proj(v); if (!p) { on = false; continue; } on ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); on = true; }
-    ctx.stroke(); ctx.setLineDash([]);
-  };
-  for (const a of [30, 60]) { const pts = []; for (let z = 0; z <= 360; z += 3) pts.push(vec(z, a)); line(pts, [3, 6], "rgba(205,214,240,.16)", 1); }
-  { const pts = []; for (let z = 0; z <= 360; z += 2) pts.push(vec(z, 0)); line(pts, [], "rgba(233,184,114,.55)", 1.2); }
-  ctx.font = "500 12px 'JetBrains Mono', monospace"; ctx.textAlign = "center";
-  const CARD = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
-  CARD.forEach((n, k) => {
+  // compass labels on the horizon
+  ctx.font = "500 12px " + css("--f"); ctx.textAlign = "center";
+  ["N", "NE", "E", "SE", "S", "SW", "W", "NW"].forEach((n, k) => {
     const p = proj(vec(k * 45, 0)); if (!p) return;
-    ctx.fillStyle = k % 2 ? "rgba(231,233,240,.55)" : "#e9b872";
-    ctx.fillText(n, p[0], p[1] + 18);
-    ctx.fillRect(p[0] - 0.5, p[1] - 5, 1, 10);
+    ctx.fillStyle = k === 0 ? css("--accent") : k % 2 ? "rgba(236,238,243,.35)" : "rgba(236,238,243,.7)";
+    ctx.fillText(n, p[0], p[1] + 20);
   });
 
   if (st) {
-    // stelle
     const night = clamp((-st.sunAlt - 4) / 10, 0, 1);
     if (night > 0) {
-      ctx.font = "10px 'JetBrains Mono', monospace"; ctx.textAlign = "left";
+      ctx.font = "10px " + css("--f"); ctx.textAlign = "left";
       for (const [ra, de, mg, nm] of STARS) {
-        const h = horiz(ra, de, st.lst, lat), p = proj(vec(h.az, refract(h.alt)));
-        if (!p) continue;
-        const r = clamp(2.4 - mg * 0.55, 0.7, 3.2);
-        ctx.fillStyle = `rgba(235,238,255,${(h.alt < 0 ? 0.25 : 0.9) * night})`;
-        ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 7); ctx.fill();
-        if (nm) { ctx.fillStyle = `rgba(160,170,195,${0.7 * night})`; ctx.fillText(nm, p[0] + 6, p[1] + 3); }
+        const hh = horiz(ra, de, st.lst, lat); if (hh.alt < 0) continue;
+        const p = proj(vec(hh.az, refract(hh.alt))); if (!p) continue;
+        ctx.fillStyle = `rgba(235,238,255,${0.9 * night})`;
+        ctx.beginPath(); ctx.arc(p[0], p[1], clamp(2.3 - mg * 0.5, 0.7, 3), 0, 7); ctx.fill();
+        if (nm && mg < 1) { ctx.fillStyle = `rgba(150,158,180,${0.6 * night})`; ctx.fillText(nm, p[0] + 6, p[1] + 3); }
       }
     }
-    // sole
     const sp = proj(vec(st.sunAz, st.sunAlt));
-    if (sp) {
-      ctx.fillStyle = "rgba(255,214,140,.95)"; ctx.beginPath(); ctx.arc(sp[0], sp[1], 9, 0, 7); ctx.fill();
-      ctx.font = "10px 'JetBrains Mono', monospace"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,214,140,.8)"; ctx.fillText("Sole", sp[0], sp[1] - 15);
-    }
-    // luna
+    if (sp) { ctx.fillStyle = "rgba(255,214,140,.95)"; ctx.beginPath(); ctx.arc(sp[0], sp[1], 9, 0, 7); ctx.fill(); }
+
     const mv = vec(st.az, st.alt), mp = proj(mv), R = 28, m = 34;
-    const visible = mp && mp[0] > m && mp[0] < W - m && mp[1] > 70 && mp[1] < H - ph - 10;
+    const topEdge = 70, botEdge = H - ph - 10;
+    const visible = mp && mp[0] > m && mp[0] < W - m && mp[1] > topEdge && mp[1] < botEdge;
     if (mp) {
-      const zp = proj(nrm(mv.map((v, i) => v + 0.02 * ([0, 0, 1][i] - dot([0, 0, 1], mv) * mv[i]))));
+      const zp = proj(nrm(mv.map((v, i) => v + 0.02 * ([0, 0, 1][i] - mv[2] * mv[i]))));
       const zen = zp ? Math.atan2(zp[1] - mp[1], zp[0] - mp[0]) : -Math.PI / 2;
-      drawMoon(ctx, mp[0], mp[1], R, st, zen, st.alt < 0 ? 0.45 : 1);
-      ctx.strokeStyle = "rgba(233,184,114,.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(mp[0], mp[1], R + 8, 0, 7); ctx.stroke();
+      drawMoon(ctx, mp[0], mp[1], R, st, zen, st.alt < 0 ? 0.45 : 1, true);
     }
-    // freccia se fuori campo
     if (!visible) {
       let dx = dot(mv, right), dy = -dot(mv, up);
       if (Math.hypot(dx, dy) < 1e-3) dy = 1;
       const l = Math.hypot(dx, dy); dx /= l; dy /= l;
-      const bx = W / 2 - 40, top = 90, bot = H - ph - 40;
-      const by = dy < 0 ? cy - top : bot - cy;
-      const k = Math.min(Math.abs(dx) > 1e-6 ? bx / Math.abs(dx) : 1e9, Math.abs(dy) > 1e-6 ? by / Math.abs(dy) : 1e9);
-      const ax = cx + dx * k, ay = cy + dy * k, ang = Math.atan2(dy, dx);
-      ctx.save(); ctx.translate(ax, ay); ctx.rotate(ang);
-      ctx.fillStyle = "#e9b872"; ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-8, -10); ctx.lineTo(-3, 0); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill();
+      const bx = W / 2 - 40, by = dy < 0 ? cy - 96 : botEdge - 30 - cy;
+      const k = Math.min(Math.abs(dx) > 1e-6 ? bx / Math.abs(dx) : 1e9, Math.abs(dy) > 1e-6 ? Math.max(10, by) / Math.abs(dy) : 1e9);
+      const ax = cx + dx * k, ay = cy + dy * k;
+      ctx.save(); ctx.translate(ax, ay); ctx.rotate(Math.atan2(dy, dx));
+      ctx.fillStyle = css("--accent"); ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-7, -9); ctx.lineTo(-3, 0); ctx.lineTo(-7, 9); ctx.closePath(); ctx.fill();
       ctx.restore();
-      const off = Math.round(R2D * Math.acos(clamp(dot(mv, fwd), -1, 1)));
-      ctx.font = "500 12px 'JetBrains Mono', monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#e7e9f0";
-      ctx.fillText("Luna " + off + "°", ax - dx * 34, ay - dy * 34 + 4);
+      ctx.font = "500 12px " + css("--f"); ctx.textAlign = "center"; ctx.fillStyle = css("--ink");
+      ctx.fillText("Moon " + Math.round(R2D * Math.acos(clamp(dot(mv, fwd), -1, 1))) + "°", ax - dx * 32, ay - dy * 32 + 4);
     }
   }
-  // mirino
-  ctx.strokeStyle = "rgba(231,233,240,.35)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(cx - 10, cy); ctx.lineTo(cx - 4, cy); ctx.moveTo(cx + 4, cy); ctx.lineTo(cx + 10, cy);
-  ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy - 4); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 10); ctx.stroke();
-
+  ctx.fillStyle = "rgba(236,238,243,.35)"; ctx.beginPath(); ctx.arc(cx, cy, 2, 0, 7); ctx.fill();
   requestAnimationFrame(frame);
 }
 
-/* ---------- Avvio ---------- */
+/* ---------- Start ---------- */
 tick();
 yaw = st.az; pitch = clamp(st.alt, -20, 70);
-updateChips();
+updateStatus();
 setInterval(tick, 1000);
 enableSensors(false);
 gps();
 requestAnimationFrame(frame);
+window.__mm = { pearson, permP, analyse, binOf, moonOn };
 })();
 </script>
 
