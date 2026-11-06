@@ -1,0 +1,543 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#060a14"><style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}</style></head><body>
+<title>Moon Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Spectral:ital,wght@0,400;1,300;1,400&display=swap">
+<style>
+/* Layout: cielo a schermo intero (canvas), chip di stato in alto, pannello dati in basso comprimibile */
+:root{
+  --sky:#060a14;
+  --ink:#e7e9f0;
+  --muted:#8b93a7;
+  --moon:#dedcd3;
+  --amber:#e9b872;
+  --panel:rgba(9,13,24,.86);
+  --line:rgba(205,214,240,.14);
+  --field:rgba(255,255,255,.06);
+  --f-display:"Spectral",Georgia,"Times New Roman",serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--sky);color:var(--ink);font-family:var(--f-mono);font-size:13px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+#cam{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:var(--sky)}
+#sky{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.top{position:fixed;top:0;left:0;right:0;padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:11px;color:var(--muted);letter-spacing:.02em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.chip b{color:var(--ink);font-weight:500}
+.chip.on b{color:var(--amber)}
+.panel{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding-top:4px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:64%;overflow-y:auto}
+.inner{max-width:560px;margin:0 auto;display:grid;gap:14px}
+.handle{display:flex;justify-content:center;padding:6px 0 2px;background:none;border:0;width:100%;cursor:pointer}
+.handle span{width:38px;height:4px;border-radius:2px;background:var(--line)}
+.head{display:flex;align-items:center;gap:14px}
+#mini{width:64px;height:64px;flex:none}
+.phase{min-width:0}
+.phase h1{font-family:var(--f-display);font-style:italic;font-weight:300;font-size:28px;line-height:1.05;margin:0;text-wrap:balance}
+.phase p{margin:4px 0 0;color:var(--muted);font-size:12px}
+.phase p b{color:var(--ink);font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 12px;font-variant-numeric:tabular-nums}
+.grid div{display:grid;gap:2px;min-width:0}
+.lbl{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.val{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.val small{color:var(--muted);font-size:11px}
+.time{display:grid;gap:6px}
+.time .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+#tval{font-size:12px;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--amber);height:28px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button.b{font:inherit;font-size:12px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer}
+button.b.primary{background:var(--amber);color:#1a1408;border-color:transparent;font-weight:500}
+button.b:focus-visible,.handle:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+details{border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;color:var(--muted);font-size:12px}
+.set{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.set label{display:grid;gap:4px;min-width:0}
+.set input{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;box-sizing:border-box;min-width:0}
+.note{color:var(--muted);font-size:11px;line-height:1.5;margin:8px 0 0;max-width:62ch}
+.panel.min .more{display:none}
+@media (max-width:360px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.set{grid-template-columns:1fr 1fr}}
+</style>
+
+<video id="cam" playsinline muted hidden></video>
+<canvas id="sky" aria-label="Vista del cielo con la posizione della luna"></canvas>
+
+<div class="top">
+  <div class="chip" id="cSens">Vista: <b>trascina</b></div>
+  <div class="chip" id="cLoc">Posizione: <b>Brno</b></div>
+  <div class="chip" id="cAim">Luna: <b>–</b></div>
+</div>
+
+<section class="panel" id="panel">
+  <button class="handle" id="handle" aria-label="Comprimi o espandi il pannello"><span></span></button>
+  <div class="inner">
+    <div class="head">
+      <canvas id="mini" width="128" height="128"></canvas>
+      <div class="phase">
+        <h1 id="pName">–</h1>
+        <p><b id="pIll">–</b> illuminata · età <b id="pAge">–</b></p>
+      </div>
+    </div>
+
+    <div class="more">
+      <div class="grid">
+        <div><span class="lbl">Azimut</span><span class="val" id="vAz">–</span></div>
+        <div><span class="lbl">Altezza</span><span class="val" id="vAlt">–</span></div>
+        <div><span class="lbl">Distanza</span><span class="val" id="vDist">–</span></div>
+        <div><span class="lbl">Sorge</span><span class="val" id="vRise">–</span></div>
+        <div><span class="lbl">Tramonta</span><span class="val" id="vSet">–</span></div>
+        <div><span class="lbl">Sole</span><span class="val" id="vSun">–</span></div>
+      </div>
+    </div>
+
+    <div class="time more">
+      <div class="row"><span class="lbl">Tempo</span><span id="tval">Adesso</span></div>
+      <input type="range" id="tslider" min="-4320" max="4320" step="10" value="0" aria-label="Sposta il tempo di ±72 ore">
+    </div>
+
+    <div class="btns more">
+      <button class="b primary" id="bSens">Attiva sensori</button>
+      <button class="b" id="bAim">Punta alla luna</button>
+      <button class="b" id="bCam">Fotocamera</button>
+      <button class="b" id="bNow">Adesso</button>
+    </div>
+
+    <details class="more">
+      <summary>Posizione e bussola</summary>
+      <div class="set">
+        <label><span class="lbl">Latitudine</span><input id="iLat" inputmode="decimal" value="49.195"></label>
+        <label><span class="lbl">Longitudine</span><input id="iLon" inputmode="decimal" value="16.608"></label>
+        <label><span class="lbl">Declinazione °E</span><input id="iDec" inputmode="decimal" value="5.3"></label>
+      </div>
+      <div class="btns" style="margin-top:10px">
+        <button class="b" id="bGps">Usa GPS</button>
+        <button class="b" id="bReset">Azzera allineamento</button>
+      </div>
+      <p class="note">Con i sensori attivi, punta il telefono sulla luna vera e premi "Allinea alla luna" per correggere la bussola. In alternativa trascina in orizzontale per ruotare il cielo. La luna è disegnata più grande del reale (diametro vero circa 0,5°).</p>
+    </details>
+  </div>
+</section>
+
+<script>
+(() => {
+const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+const norm = a => ((a % 360) + 360) % 360;
+const n180 = a => { a = norm(a); return a > 180 ? a - 360 : a; };
+const sind = a => Math.sin(a * D2R), cosd = a => Math.cos(a * D2R);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- Astronomia (Meeus, termini principali) ---------- */
+// [coeff, D, M, M', F]
+const LON = [[6288774,0,0,1,0],[1274027,2,0,-1,0],[658314,2,0,0,0],[213618,0,0,2,0],[-185116,0,1,0,0],[-114332,0,0,0,2],[58793,2,0,-2,0],[57066,2,-1,-1,0],[53322,2,0,1,0],[45758,2,-1,0,0],[-40923,0,1,-1,0],[-34720,1,0,0,0],[-30383,0,1,1,0],[15327,2,0,0,-2],[-12528,0,0,1,2],[10980,0,0,1,-2],[10675,4,0,-1,0],[10034,0,0,3,0],[8548,4,0,-2,0],[-7888,2,1,-1,0],[-6766,2,1,0,0],[-5163,1,0,-1,0]];
+const LAT = [[5128122,0,0,0,1],[280602,0,0,1,1],[277693,0,0,1,-1],[173237,2,0,0,-1],[55413,2,0,-1,1],[46271,2,0,-1,-1],[32573,2,0,0,1],[17198,0,0,2,1],[9266,2,0,1,-1],[8822,0,0,2,-1]];
+const DIST = [[-20905355,0,0,1,0],[-3699111,2,0,-1,0],[-2955968,2,0,0,0],[-569925,0,0,2,0],[48888,0,1,0,0],[-3149,0,0,0,2],[246158,2,0,-2,0],[-152138,2,-1,-1,0],[-170733,2,0,1,0],[-204586,2,-1,0,0],[-129620,0,1,-1,0],[108743,1,0,0,0],[104755,0,1,1,0],[10321,2,0,0,-2],[79661,0,0,1,-2],[-34782,4,0,-1,0],[-23210,0,0,3,0],[-21636,4,0,-2,0]];
+
+function horiz(ra, dec, lst, lat) {
+  const H = lst - ra;
+  const E = -cosd(dec) * sind(H);
+  const N = sind(dec) * cosd(lat) - cosd(dec) * cosd(H) * sind(lat);
+  const U = sind(dec) * sind(lat) + cosd(dec) * cosd(H) * cosd(lat);
+  return { az: norm(R2D * Math.atan2(E, N)), alt: R2D * Math.asin(clamp(U, -1, 1)), H };
+}
+function refract(alt) {
+  if (alt < -1.5) return alt;
+  return alt + 1.02 / Math.tan((alt + 10.3 / (alt + 5.11)) * D2R) / 60;
+}
+
+function astro(date, lat, lon) {
+  const jd = date.getTime() / 864e5 + 2440587.5, T = (jd - 2451545) / 36525;
+  const Lp = norm(218.3164477 + 481267.88123421 * T);
+  const D = norm(297.8501921 + 445267.1114034 * T);
+  const M = norm(357.5291092 + 35999.0502909 * T);
+  const Mp = norm(134.9633964 + 477198.8675055 * T);
+  const F = norm(93.2720950 + 483202.0175233 * T);
+  const arg = (d, m, mp, f) => d * D + m * M + mp * Mp + f * F;
+  let sl = 0, sb = 0, sr = 0;
+  for (const [c, d, m, mp, f] of LON) sl += c * sind(arg(d, m, mp, f));
+  for (const [c, d, m, mp, f] of LAT) sb += c * sind(arg(d, m, mp, f));
+  for (const [c, d, m, mp, f] of DIST) sr += c * cosd(arg(d, m, mp, f));
+  const lam = norm(Lp + sl / 1e6), bet = sb / 1e6, dist = 385000.56 + sr / 1000;
+
+  const Ls = norm(280.46646 + 36000.76983 * T);
+  const lamS = norm(Ls + 1.914602 * sind(M) + 0.019993 * sind(2 * M));
+  const rS = (1.000140 - 0.016708 * cosd(M) - 0.000139 * cosd(2 * M)) * 149597870.7;
+
+  const eps = 23.439291 - 0.0130042 * T;
+  const eq = (l, b) => ({
+    ra: norm(R2D * Math.atan2(sind(l) * cosd(eps) - Math.tan(b * D2R) * sind(eps), cosd(l))),
+    dec: R2D * Math.asin(sind(b) * cosd(eps) + cosd(b) * sind(eps) * sind(l))
+  });
+  const m = eq(lam, bet), s = eq(lamS, 0);
+  const lst = norm(280.46061837 + 360.98564736629 * (jd - 2451545) + lon);
+
+  const mh = horiz(m.ra, m.dec, lst, lat);
+  let alt = mh.alt - R2D * Math.asin(6378.14 / dist) * cosd(mh.alt); // parallasse
+  alt = refract(alt);
+  const sh = horiz(s.ra, s.dec, lst, lat);
+
+  const cpsi = sind(s.dec) * sind(m.dec) + cosd(s.dec) * cosd(m.dec) * cosd(s.ra - m.ra);
+  const psi = Math.acos(clamp(cpsi, -1, 1));
+  const i = Math.atan2(rS * Math.sin(psi), dist - rS * Math.cos(psi));
+  const illum = (1 + Math.cos(i)) / 2;
+  const chi = R2D * Math.atan2(cosd(s.dec) * sind(s.ra - m.ra), sind(s.dec) * cosd(m.dec) - cosd(s.dec) * sind(m.dec) * cosd(s.ra - m.ra));
+  const q = R2D * Math.atan2(sind(mh.H), Math.tan(lat * D2R) * cosd(m.dec) - sind(m.dec) * cosd(mh.H));
+  const elong = norm(lam - lamS);
+  return { az: mh.az, alt, dist, illum, i, chi, q, elong, age: elong / 360 * 29.530589,
+           sunAz: sh.az, sunAlt: refract(sh.alt), lst };
+}
+
+function phaseName(e) {
+  if (e < 6 || e > 354) return "Luna nuova";
+  if (e < 84) return "Falce crescente";
+  if (e < 96) return "Primo quarto";
+  if (e < 174) return "Gibbosa crescente";
+  if (e < 186) return "Luna piena";
+  if (e < 264) return "Gibbosa calante";
+  if (e < 276) return "Ultimo quarto";
+  return "Falce calante";
+}
+const DIRS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"];
+const dirName = az => DIRS[Math.round(norm(az) / 22.5) % 16];
+
+function riseSet(t0, lat, lon) {
+  const step = 10 * 60000, th = -0.27;
+  let prev = astro(new Date(t0), lat, lon).alt, rise = null, set = null;
+  for (let k = 1; k <= 150 && (!rise || !set); k++) {
+    const t = t0 + k * step, a = astro(new Date(t), lat, lon).alt;
+    if ((prev - th) * (a - th) <= 0 && prev !== a) {
+      const tc = t - step + step * (th - prev) / (a - prev);
+      if (a > prev && !rise) rise = tc;
+      if (a < prev && !set) set = tc;
+    }
+    prev = a;
+  }
+  return { rise, set };
+}
+
+/* Stelle luminose (J2000): RA, Dec, magnitudine, nome */
+const STARS = [[101.287,-16.716,-1.46,"Sirio"],[213.915,19.182,-0.05,"Arturo"],[279.234,38.784,0.03,"Vega"],[79.172,45.998,0.08,"Capella"],[78.634,-8.202,0.13,"Rigel"],[114.825,5.225,0.34,"Procione"],[88.793,7.407,0.5,"Betelgeuse"],[297.696,8.868,0.76,"Altair"],[68.98,16.509,0.86,"Aldebaran"],[247.352,-26.432,0.96,"Antares"],[201.298,-11.161,0.97,"Spica"],[116.329,28.026,1.14,"Polluce"],[344.413,-29.622,1.16,"Fomalhaut"],[310.358,45.28,1.25,"Deneb"],[152.093,11.967,1.35,"Regolo"],[37.955,89.264,1.98,"Polare"],[113.65,31.888,1.58,""],[81.283,6.35,1.64,""],[84.053,-1.202,1.69,""],[85.19,-1.943,1.77,""],[83.002,-0.299,2.23,""],[165.932,61.751,1.79,""],[165.46,56.382,2.37,""],[193.507,55.96,1.77,""],[200.981,54.925,2.23,""],[206.885,49.313,1.86,""],[178.457,53.695,2.44,""],[183.856,57.033,3.31,""],[10.127,56.537,2.24,""],[2.295,59.15,2.27,""],[14.177,60.717,2.47,""],[21.454,60.235,2.68,""],[28.599,63.67,3.38,""]];
+
+/* ---------- Stato ---------- */
+const $ = id => document.getElementById(id);
+const cv = $("sky"), ctx = cv.getContext("2d");
+const mini = $("mini"), mctx = mini.getContext("2d");
+const panel = $("panel"), video = $("cam");
+
+let lat = 49.195, lon = 16.608, decl = 5.3, locName = "Brno (predefinita)";
+try {
+  const s = JSON.parse(localStorage.getItem("moon-loc") || "null");
+  if (s) { lat = s.lat; lon = s.lon; decl = s.decl ?? decl; locName = s.name || "manuale"; }
+} catch (e) {}
+$("iLat").value = lat; $("iLon").value = lon; $("iDec").value = decl;
+
+let offsetMin = 0, st = null, rs = { rise: null, set: null }, rsKey = "";
+let sensorOn = false, gotSensor = false, iosOff = null, userOff = 0;
+try { userOff = +localStorage.getItem("moon-off") || 0; } catch (e) {}
+let yaw = 120, pitch = 15;
+let fwd = [0, 1, 0], up = [0, 0, 1], tFwd = fwd.slice(), tUp = up.slice();
+
+const now = () => Date.now() + offsetMin * 60000;
+const vec = (az, alt) => [cosd(alt) * sind(az), cosd(alt) * cosd(az), sind(alt)];
+const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const nrm = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0]/l, a[1]/l, a[2]/l]; };
+
+function saveLoc() {
+  try { localStorage.setItem("moon-loc", JSON.stringify({ lat, lon, decl, name: locName })); } catch (e) {}
+}
+
+/* ---------- Sensori ---------- */
+function onOri(e) {
+  if (e.alpha == null) return;
+  let a = e.alpha;
+  if (typeof e.webkitCompassHeading === "number" && e.webkitCompassAccuracy >= 0) {
+    const target = norm(360 - e.webkitCompassHeading - e.alpha);
+    iosOff = iosOff == null ? target : norm(iosOff + n180(target - iosOff) * 0.05);
+    a += iosOff;
+  }
+  a = a - decl + userOff;
+  const b = e.beta || 0, g = e.gamma || 0;
+  const cA = cosd(a), sA = sind(a), cB = cosd(b), sB = sind(b), cG = cosd(g), sG = sind(g);
+  const X = [cA*cG - sA*sB*sG, cG*sA + cA*sB*sG, -cB*sG];
+  const Y = [-cB*sA, cA*cB, sB];
+  const Z = [cA*sG + cG*sA*sB, sA*sG - cA*cG*sB, cB*cG];
+  const ang = (screen.orientation && screen.orientation.angle) ?? window.orientation ?? 0;
+  const c = cosd(ang), s = sind(ang);
+  tUp = [s*X[0] + c*Y[0], s*X[1] + c*Y[1], s*X[2] + c*Y[2]];
+  tFwd = [-Z[0], -Z[1], -Z[2]];
+  if (!gotSensor) { gotSensor = true; fwd = tFwd.slice(); up = tUp.slice(); }
+  sensorOn = true;
+  updateChips();
+}
+async function enableSensors(fromClick) {
+  try {
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      if (!fromClick) return;
+      const r = await DeviceOrientationEvent.requestPermission();
+      if (r !== "granted") throw new Error("negato");
+    }
+  } catch (e) { $("cSens").innerHTML = "Sensori: <b>negati</b>"; return; }
+  if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onOri, true);
+  else addEventListener("deviceorientation", onOri, true);
+  setTimeout(() => { if (!gotSensor && fromClick) $("cSens").innerHTML = "Sensori: <b>non disponibili</b> · trascina"; }, 1500);
+}
+
+/* ---------- Input ---------- */
+let drag = null;
+cv.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY };
+  const k = 62 / Math.max(innerWidth, innerHeight);
+  if (sensorOn) { userOff = norm(userOff + dx * k); try { localStorage.setItem("moon-off", userOff); } catch (er) {} }
+  else { yaw = norm(yaw - dx * k); pitch = clamp(pitch + dy * k, -89, 89); }
+});
+const endDrag = () => drag = null;
+cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+
+$("handle").onclick = () => panel.classList.toggle("min");
+$("bSens").onclick = () => enableSensors(true);
+$("bAim").onclick = () => {
+  if (!st) return;
+  if (sensorOn) {
+    const heading = norm(R2D * Math.atan2(fwd[0], fwd[1]));
+    userOff = norm(userOff + n180(heading - st.az));
+    try { localStorage.setItem("moon-off", userOff); } catch (e) {}
+  } else { yaw = st.az; pitch = clamp(st.alt, -89, 89); }
+};
+$("bReset").onclick = () => { userOff = 0; try { localStorage.setItem("moon-off", 0); } catch (e) {} };
+$("bNow").onclick = () => { offsetMin = 0; $("tslider").value = 0; tick(); };
+$("tslider").oninput = e => { offsetMin = +e.target.value; tick(); };
+for (const id of ["iLat", "iLon", "iDec"]) $(id).onchange = () => {
+  const la = parseFloat($("iLat").value.replace(",", ".")), lo = parseFloat($("iLon").value.replace(",", ".")), de = parseFloat($("iDec").value.replace(",", "."));
+  if (isFinite(la) && Math.abs(la) <= 90) lat = la;
+  if (isFinite(lo) && Math.abs(lo) <= 180) lon = lo;
+  if (isFinite(de) && Math.abs(de) <= 30) decl = de;
+  if (id !== "iDec") locName = "manuale";
+  saveLoc(); rsKey = ""; tick();
+};
+function gps() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(p => {
+    lat = +p.coords.latitude.toFixed(4); lon = +p.coords.longitude.toFixed(4); locName = "GPS";
+    $("iLat").value = lat; $("iLon").value = lon; saveLoc(); rsKey = ""; tick();
+  }, () => { $("cLoc").innerHTML = "Posizione: <b>" + locName + "</b>"; }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+}
+$("bGps").onclick = gps;
+let camStream = null;
+$("bCam").onclick = async () => {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; video.hidden = true; $("bCam").textContent = "Fotocamera"; return; }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    video.srcObject = camStream; video.hidden = false; await video.play(); $("bCam").textContent = "Spegni fotocamera";
+  } catch (e) { $("bCam").textContent = "Fotocamera non disponibile"; }
+};
+
+/* ---------- Texture lunare ---------- */
+const tex = document.createElement("canvas"); tex.width = tex.height = 256;
+(() => {
+  const t = tex.getContext("2d"), r = 128;
+  t.save(); t.beginPath(); t.arc(r, r, r, 0, 7); t.clip();
+  const g = t.createRadialGradient(r*0.9, r*0.85, 10, r, r, r);
+  g.addColorStop(0, "#ecebe4"); g.addColorStop(0.75, "#d6d4cb"); g.addColorStop(1, "#a9a79f");
+  t.fillStyle = g; t.fillRect(0, 0, 256, 256);
+  const mare = [[-.35,-.42,.28,.22],[.18,-.38,.17,.16],[.28,-.08,.22,.17],[.68,-.28,.11,.13],[.55,.15,.13,.2],[.33,.25,.09,.09],[-.6,-.05,.28,.42],[-.2,.35,.2,.14],[-.5,.38,.1,.09],[-.05,-.72,.4,.07],[0,-.18,.1,.08]];
+  try { t.filter = "blur(5px)"; } catch (e) {}
+  t.fillStyle = "rgba(96,98,108,.5)";
+  for (const [x, y, a, b] of mare) { t.beginPath(); t.ellipse(r + x*r, r + y*r, a*r, b*r, 0, 0, 7); t.fill(); }
+  t.filter = "none";
+  t.fillStyle = "rgba(255,255,250,.8)";
+  for (const [x, y, s] of [[-.15,.72,.045],[-.3,-.12,.035],[-.62,-.2,.025]]) { t.beginPath(); t.arc(r + x*r, r + y*r, s*r, 0, 7); t.fill(); }
+  t.restore();
+})();
+
+// zenAng: angolo canvas (rad) della direzione zenit sullo schermo, nel punto della luna
+function drawMoon(c, x, y, R, s, zenAng, dim) {
+  const limb = zenAng - (s.chi - s.q) * D2R;      // direzione del lembo illuminato
+  const north = zenAng + s.q * D2R;                // nord lunare ~ nord celeste
+  const cI = Math.cos(s.i);
+  c.save(); c.translate(x, y); c.globalAlpha = dim;
+  const gl = c.createRadialGradient(0, 0, R * 0.8, 0, 0, R * 3.2);
+  gl.addColorStop(0, `rgba(230,228,215,${0.22 * s.illum})`); gl.addColorStop(1, "rgba(230,228,215,0)");
+  c.fillStyle = gl; c.beginPath(); c.arc(0, 0, R * 3.2, 0, 7); c.fill();
+  c.fillStyle = "#1b202c"; c.beginPath(); c.arc(0, 0, R, 0, 7); c.fill();
+  c.save(); c.rotate(north + Math.PI / 2); c.globalAlpha = dim * 0.14; c.drawImage(tex, -R, -R, 2*R, 2*R); c.restore();
+  c.save(); c.rotate(limb);
+  c.beginPath(); c.arc(0, 0, R, -Math.PI / 2, Math.PI / 2, false);
+  for (let k = 0; k <= 48; k++) { const th = Math.PI / 2 - Math.PI * k / 48; c.lineTo(-cI * R * Math.cos(th), R * Math.sin(th)); }
+  c.closePath(); c.clip();
+  c.rotate(north + Math.PI / 2 - limb); c.drawImage(tex, -R, -R, 2*R, 2*R);
+  c.restore(); c.restore();
+}
+
+/* ---------- Aggiornamento dati ---------- */
+const fmtT = new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit" });
+const fmtD = new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+function fmtRS(t) {
+  if (!t) return "—";
+  const d = new Date(t), today = new Date(now());
+  return fmtT.format(d) + (d.getDate() !== today.getDate() ? " <small>+1g</small>" : "");
+}
+function updateChips() {
+  $("cSens").className = "chip" + (sensorOn ? " on" : "");
+  $("cSens").innerHTML = sensorOn ? "Sensori: <b>attivi</b>" : $("cSens").innerHTML;
+  $("bAim").textContent = sensorOn ? "Allinea alla luna" : "Punta alla luna";
+  $("cLoc").innerHTML = `Posizione: <b>${locName}</b>`;
+}
+function tick() {
+  const t = now();
+  st = astro(new Date(t), lat, lon);
+  const key = Math.floor(t / 300000) + ":" + lat + ":" + lon;
+  if (key !== rsKey) { rs = riseSet(t, lat, lon); rsKey = key; }
+  $("pName").textContent = phaseName(st.elong);
+  $("pIll").textContent = Math.round(st.illum * 100) + "%";
+  $("pAge").textContent = st.age.toFixed(1).replace(".", ",") + " g";
+  $("vAz").innerHTML = st.az.toFixed(1).replace(".", ",") + "° <small>" + dirName(st.az) + "</small>";
+  $("vAlt").textContent = st.alt.toFixed(1).replace(".", ",") + "°";
+  $("vDist").innerHTML = Math.round(st.dist).toLocaleString("it-IT") + " <small>km</small>";
+  $("vRise").innerHTML = fmtRS(rs.rise);
+  $("vSet").innerHTML = fmtRS(rs.set);
+  $("vSun").textContent = st.sunAlt.toFixed(0) + "°";
+  $("tval").textContent = offsetMin === 0 ? "Adesso · " + fmtT.format(new Date(t)) : fmtD.format(new Date(t)) + "  (" + (offsetMin > 0 ? "+" : "−") + Math.floor(Math.abs(offsetMin) / 60) + " h " + (Math.abs(offsetMin) % 60) + " min)";
+  $("cAim").innerHTML = "Luna: <b>" + dirName(st.az) + " " + Math.round(st.az) + "°, " + (st.alt >= 0 ? "alt " + Math.round(st.alt) + "°" : "sotto l'orizzonte") + "</b>";
+  mctx.clearRect(0, 0, 128, 128);
+  drawMoon(mctx, 64, 64, 44, st, -Math.PI / 2, 1);
+}
+
+/* ---------- Disegno ---------- */
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+}
+addEventListener("resize", resize); resize();
+
+function lerpCol(a, b, t) { return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`; }
+
+function frame() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // orientamento
+  if (sensorOn) {
+    fwd = nrm(fwd.map((v, i) => v + (tFwd[i] - v) * 0.25));
+    up = nrm(up.map((v, i) => v + (tUp[i] - v) * 0.25));
+  } else {
+    fwd = vec(yaw, pitch);
+    up = [-sind(pitch) * sind(yaw), -sind(pitch) * cosd(yaw), cosd(pitch)];
+  }
+  up = nrm(up.map((v, i) => v - dot(up, fwd) * fwd[i]));
+  const right = cross(fwd, up);
+
+  const ph = panel.getBoundingClientRect().height;
+  const cx = W / 2, cy = Math.max(80, (H - ph) / 2 + 20);
+  const f = (Math.max(W, H) / 2) / Math.tan(31 * D2R);
+  const proj = v => { const z = dot(v, fwd); if (z < 0.03) return null; return [cx + f * dot(v, right) / z, cy - f * dot(v, up) / z]; };
+
+  // cielo
+  const sa = st ? st.sunAlt : -30, tt = clamp((sa + 16) / 22, 0, 1);
+  if (camStream) ctx.clearRect(0, 0, W, H);
+  else {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, lerpCol([5, 8, 18], [46, 96, 152], tt));
+    g.addColorStop(1, lerpCol([13, 19, 36], [150, 182, 214], tt));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+
+  // terreno: semipiano sotto l'orizzonte (l'orizzonte proiettato è una retta)
+  const Uz = [0, 0, 1], uf = dot(Uz, fwd), ur = dot(Uz, right), uu = dot(Uz, up);
+  const gfun = (x, y) => uf + ur * (x - cx) / f - uu * (y - cy) / f;
+  const corners = [[0, 0], [W, 0], [W, H], [0, H]], poly = [];
+  for (let k = 0; k < 4; k++) {
+    const a = corners[k], b = corners[(k + 1) % 4], ga = gfun(...a), gb = gfun(...b);
+    if (ga < 0) poly.push(a);
+    if ((ga < 0) !== (gb < 0)) { const t = ga / (ga - gb); poly.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+  }
+  if (poly.length > 2) {
+    ctx.fillStyle = camStream ? "rgba(4,6,12,.28)" : lerpCol([3, 5, 9], [40, 46, 40], tt);
+    ctx.beginPath(); poly.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill();
+  }
+
+  // griglia
+  const line = (pts, dash, col, w) => {
+    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath();
+    let on = false;
+    for (const v of pts) { const p = proj(v); if (!p) { on = false; continue; } on ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); on = true; }
+    ctx.stroke(); ctx.setLineDash([]);
+  };
+  for (const a of [30, 60]) { const pts = []; for (let z = 0; z <= 360; z += 3) pts.push(vec(z, a)); line(pts, [3, 6], "rgba(205,214,240,.16)", 1); }
+  { const pts = []; for (let z = 0; z <= 360; z += 2) pts.push(vec(z, 0)); line(pts, [], "rgba(233,184,114,.55)", 1.2); }
+  ctx.font = "500 12px 'JetBrains Mono', monospace"; ctx.textAlign = "center";
+  const CARD = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+  CARD.forEach((n, k) => {
+    const p = proj(vec(k * 45, 0)); if (!p) return;
+    ctx.fillStyle = k % 2 ? "rgba(231,233,240,.55)" : "#e9b872";
+    ctx.fillText(n, p[0], p[1] + 18);
+    ctx.fillRect(p[0] - 0.5, p[1] - 5, 1, 10);
+  });
+
+  if (st) {
+    // stelle
+    const night = clamp((-st.sunAlt - 4) / 10, 0, 1);
+    if (night > 0) {
+      ctx.font = "10px 'JetBrains Mono', monospace"; ctx.textAlign = "left";
+      for (const [ra, de, mg, nm] of STARS) {
+        const h = horiz(ra, de, st.lst, lat), p = proj(vec(h.az, refract(h.alt)));
+        if (!p) continue;
+        const r = clamp(2.4 - mg * 0.55, 0.7, 3.2);
+        ctx.fillStyle = `rgba(235,238,255,${(h.alt < 0 ? 0.25 : 0.9) * night})`;
+        ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 7); ctx.fill();
+        if (nm) { ctx.fillStyle = `rgba(160,170,195,${0.7 * night})`; ctx.fillText(nm, p[0] + 6, p[1] + 3); }
+      }
+    }
+    // sole
+    const sp = proj(vec(st.sunAz, st.sunAlt));
+    if (sp) {
+      ctx.fillStyle = "rgba(255,214,140,.95)"; ctx.beginPath(); ctx.arc(sp[0], sp[1], 9, 0, 7); ctx.fill();
+      ctx.font = "10px 'JetBrains Mono', monospace"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,214,140,.8)"; ctx.fillText("Sole", sp[0], sp[1] - 15);
+    }
+    // luna
+    const mv = vec(st.az, st.alt), mp = proj(mv), R = 28, m = 34;
+    const visible = mp && mp[0] > m && mp[0] < W - m && mp[1] > 70 && mp[1] < H - ph - 10;
+    if (mp) {
+      const zp = proj(nrm(mv.map((v, i) => v + 0.02 * ([0, 0, 1][i] - dot([0, 0, 1], mv) * mv[i]))));
+      const zen = zp ? Math.atan2(zp[1] - mp[1], zp[0] - mp[0]) : -Math.PI / 2;
+      drawMoon(ctx, mp[0], mp[1], R, st, zen, st.alt < 0 ? 0.45 : 1);
+      ctx.strokeStyle = "rgba(233,184,114,.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(mp[0], mp[1], R + 8, 0, 7); ctx.stroke();
+    }
+    // freccia se fuori campo
+    if (!visible) {
+      let dx = dot(mv, right), dy = -dot(mv, up);
+      if (Math.hypot(dx, dy) < 1e-3) dy = 1;
+      const l = Math.hypot(dx, dy); dx /= l; dy /= l;
+      const bx = W / 2 - 40, top = 90, bot = H - ph - 40;
+      const by = dy < 0 ? cy - top : bot - cy;
+      const k = Math.min(Math.abs(dx) > 1e-6 ? bx / Math.abs(dx) : 1e9, Math.abs(dy) > 1e-6 ? by / Math.abs(dy) : 1e9);
+      const ax = cx + dx * k, ay = cy + dy * k, ang = Math.atan2(dy, dx);
+      ctx.save(); ctx.translate(ax, ay); ctx.rotate(ang);
+      ctx.fillStyle = "#e9b872"; ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-8, -10); ctx.lineTo(-3, 0); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      const off = Math.round(R2D * Math.acos(clamp(dot(mv, fwd), -1, 1)));
+      ctx.font = "500 12px 'JetBrains Mono', monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#e7e9f0";
+      ctx.fillText("Luna " + off + "°", ax - dx * 34, ay - dy * 34 + 4);
+    }
+  }
+  // mirino
+  ctx.strokeStyle = "rgba(231,233,240,.35)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx - 10, cy); ctx.lineTo(cx - 4, cy); ctx.moveTo(cx + 4, cy); ctx.lineTo(cx + 10, cy);
+  ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy - 4); ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 10); ctx.stroke();
+
+  requestAnimationFrame(frame);
+}
+
+/* ---------- Avvio ---------- */
+tick();
+yaw = st.az; pitch = clamp(st.alt, -20, 70);
+updateChips();
+setInterval(tick, 1000);
+enableSensors(false);
+gps();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
