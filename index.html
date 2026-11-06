@@ -119,7 +119,7 @@ textarea.field{resize:none;height:64px;line-height:1.4}
       <canvas class="mini" id="mini" width="112" height="112"></canvas>
       <div>
         <h2 id="pName">–</h2>
-        <p><span id="pIll">–</span> lit · day <span id="pAge">–</span> of 29.5</p>
+        <p><span id="pIll">–</span> lit · <span id="pAge">–</span></p>
       </div>
     </div>
     <div class="grid">
@@ -487,14 +487,25 @@ function fmtRS(t) {
   const d = new Date(t), ref = new Date(now());
   return fmtT.format(d) + (d.getDate() !== ref.getDate() ? " <small>tmrw</small>" : "");
 }
+// Next Full Moon (if waxing) or New Moon (if waning): step 6 h, then bisect
+const fmtDay = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" });
+let ne = { full: true, t: Date.now() };
+function nextEvent(t0) {
+  const full = astro(new Date(t0), lat, lon).elong < 180, target = full ? 180 : 0;
+  const g = t => n180(astro(new Date(t), lat, lon).elong - target);
+  let a = t0, b = t0;
+  for (let k = 0; k < 80; k++) { b = a + 6 * 3600e3; if (g(a) < 0 && g(b) >= 0) break; a = b; }
+  for (let k = 0; k < 25; k++) { const m = (a + b) / 2; if (g(m) < 0) a = m; else b = m; }
+  return { full, t: b };
+}
 function tick() {
   const t = now();
   st = astro(new Date(t), lat, lon);
   const key = Math.floor(t / 300000) + ":" + lat + ":" + lon;
-  if (key !== rsKey) { rs = riseSet(t, lat, lon); rsKey = key; }
+  if (key !== rsKey) { rs = riseSet(t, lat, lon); ne = nextEvent(t); rsKey = key; }
   $("pName").textContent = phaseName(st.elong);
   $("pIll").textContent = Math.round(st.illum * 100) + "%";
-  $("pAge").textContent = fmt1(st.age);
+  $("pAge").textContent = (ne.full ? "waxing · Full Moon " : "waning · New Moon ") + fmtDay.format(new Date(ne.t));
   $("vAz").innerHTML = fmt1(st.az) + "° <small>" + dirName(st.az) + "</small>";
   $("vAlt").textContent = fmt1(st.alt) + "°";
   $("vDist").innerHTML = Math.round(st.dist).toLocaleString("en-US") + " <small>km</small>";
