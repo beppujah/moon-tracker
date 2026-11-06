@@ -2,7 +2,7 @@
 
 See where the Moon is right now, and find out whether your mood follows its phases.
 
-**[Open the app →](https://beppujah.github.io/moon-tracker/)**
+**Open the app: https://beppujah.github.io/moon-tracker/**
 
 Moon Mood runs in the browser and works best on a phone. Point it at the sky and the Moon stays in place on screen while you move. Log how your day went, and after a couple of lunar cycles the app tells you whether there is any real link between your mood and the Moon.
 
@@ -26,14 +26,14 @@ Moon Mood runs in the browser and works best on a phone. Point it at the sky and
 - Pearson correlation and a permutation-test p-value, with a plain-language verdict
 - Sample data preview, so you can see the report before you have your own
 
-## Use it on iPhone
+## Use it on your phone
 
-1. Open [the app](https://beppujah.github.io/moon-tracker/) in Safari.
-2. Tap **Share → Add to Home Screen** to get it as a full-screen app.
+1. Open https://beppujah.github.io/moon-tracker/ in your phone's browser.
+2. Add it to your Home Screen to use it as a full-screen app: on iPhone tap **Share → Add to Home Screen**; on Android open the browser menu and tap **Add to Home screen**.
 3. Tap **Enable sensors** and allow motion and location access.
 4. Point the phone at the real Moon and tap **Align to Moon** to correct the compass.
 
-The Home Screen app keeps its own data, separate from Safari, so log your mood from the same one every time.
+The Home Screen app keeps its own data, separate from the browser, so log your mood from the same one every time.
 
 ## Privacy
 
