@@ -49,7 +49,7 @@ No account, no server, no tracking. Entries are stored only in your browser on y
 | Orientation | DeviceOrientation API (absolute heading where available, `webkitCompassHeading` on iOS), magnetic declination correction and manual alignment |
 | Statistics | Pearson's r between mood (−2 to +2) and illuminated fraction; p-value from a 2,000-shuffle permutation test |
 
-The whole app is a single `index.html` with no build step and no libraries. The only external resource is the Geist font from Google Fonts.
+The whole app is a single `index.html` with no build step and no libraries. The only external resource is the Geist font from Google Fonts. A small service worker (`sw.js`) keeps a copy of the app on the device, so once opened it also works offline.
 
 ## Limitations
 
@@ -63,4 +63,5 @@ The whole app is a single `index.html` with no build step and no libraries. The 
 |---|---|
 | `index.html` | The app |
 | `manifest.webmanifest` | Name and icons for Add to Home Screen |
+| `sw.js` | Service worker: offline use and the browser's Install prompt |
 | `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | App icons |

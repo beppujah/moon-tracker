@@ -1151,5 +1151,11 @@ requestAnimationFrame(frame);
 window.__mm = { pearson, permP, permDiff, analyse, binOf, moonOn };
 })();
 </script>
+<script>
+/* Offline support and "Install app": see sw.js */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+}
+</script>
 
 </body></html>
